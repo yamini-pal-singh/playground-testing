@@ -1,228 +1,382 @@
 /**
  * Send Playground UI Test Report Email
+ * Reads actual results from reports/playground-summary-*.json
  * Premium dark theme with visual clarity
  */
 
 import * as nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
-interface ModuleResult {
-  module: string;
-  pass: number;
-  fail: number;
-  rate: number;
-}
+// ── Interfaces ───────────────────────────────────────────────────────────────
 
-interface FailedTest {
+interface SuiteResult {
+  category: string;
   name: string;
-  module: string;
-  error: string;
+  status: 'pass' | 'fail';
+  duration_s: number;
+  failure_reason: string;
 }
 
-// ── Test Results Data ────────────────────────────────────────────────────────
+interface PlaygroundSummary {
+  runDate: string;
+  runTimestamp: string;
+  endTimestamp: string;
+  totalSuites: number;
+  passed: number;
+  failed: number;
+  suites: SuiteResult[];
+}
 
-const totalTests = 287;
-const passed = 281;
-const failed = 6;
-const passRate = Math.round((passed / totalTests) * 100);
-const duration = '35 min';
-const runDate = new Date().toLocaleDateString('en-US', {
-  weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-});
-const runTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+interface CategoryGroup {
+  category: string;
+  suites: SuiteResult[];
+  passed: number;
+  failed: number;
+  totalDuration: number;
+}
 
-const modules: ModuleResult[] = [
-  { module: 'Page Load & Layout', pass: 46, fail: 0, rate: 100 },
-  { module: 'Credits', pass: 26, fail: 0, rate: 100 },
-  { module: 'Tab Navigation', pass: 41, fail: 1, rate: 98 },
-  { module: 'Model Selection', pass: 38, fail: 0, rate: 100 },
-  { module: 'Language Selection', pass: 35, fail: 3, rate: 92 },
-  { module: 'Audio Intelligence', pass: 44, fail: 0, rate: 100 },
-  { module: 'File Upload', pass: 26, fail: 2, rate: 93 },
-  { module: 'Sample Audio', pass: 25, fail: 0, rate: 100 },
-];
+// ── Load Summary Data ────────────────────────────────────────────────────────
 
-const failedTests: FailedTest[] = [
-  { name: 'Browser back button after tab switch', module: 'Tab Navigation', error: 'SPA navigation — goBack() exits the page' },
-  { name: 'Language → Model isolation', module: 'Language Selection', error: 'Custom dropdown Hindi click timeout' },
-  { name: 'Non-Indic language filter', module: 'Language Selection', error: 'Dropdown scope includes body text' },
-  { name: 'Dropdown HTML/template check', module: 'Language Selection', error: 'Custom dropdown locator timeout' },
-  { name: 'MP3 filename display', module: 'File Upload', error: 'Long filename truncated in UI' },
-  { name: 'Large MP3 (28MB) upload', module: 'File Upload', error: 'File size exceeds upload timing' },
-];
+function loadLatestSummary(): PlaygroundSummary {
+  const reportsDir = path.resolve(__dirname, '..', 'reports');
+
+  if (!fs.existsSync(reportsDir)) {
+    console.error('❌ Reports directory not found:', reportsDir);
+    process.exit(1);
+  }
+
+  const files = fs.readdirSync(reportsDir)
+    .filter(f => f.startsWith('playground-summary-') && f.endsWith('.json'))
+    .sort()
+    .reverse();
+
+  if (files.length === 0) {
+    console.error('❌ No playground-summary-*.json files found in', reportsDir);
+    process.exit(1);
+  }
+
+  const latestFile = path.join(reportsDir, files[0]);
+  console.log(`📂 Reading summary: ${latestFile}`);
+
+  const raw = fs.readFileSync(latestFile, 'utf-8');
+  return JSON.parse(raw) as PlaygroundSummary;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDuration(totalSeconds: number): string {
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  if (mins >= 60) {
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    return `${hrs}h ${remMins}m`;
+  }
+  return secs > 0 ? `${mins}m ${secs}s` : `${mins} min`;
+}
+
+function computeDurationSeconds(start: string, end: string): number {
+  const s = new Date(start.replace(' ', 'T'));
+  const e = new Date(end.replace(' ', 'T'));
+  return Math.round((e.getTime() - s.getTime()) / 1000);
+}
+
+function groupByCategory(suites: SuiteResult[]): CategoryGroup[] {
+  const map = new Map<string, SuiteResult[]>();
+  for (const s of suites) {
+    const list = map.get(s.category) || [];
+    list.push(s);
+    map.set(s.category, list);
+  }
+  const groups: CategoryGroup[] = [];
+  for (const [category, items] of map) {
+    groups.push({
+      category,
+      suites: items,
+      passed: items.filter(s => s.status === 'pass').length,
+      failed: items.filter(s => s.status === 'fail').length,
+      totalDuration: items.reduce((sum, s) => sum + s.duration_s, 0),
+    });
+  }
+  return groups;
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr.replace(' ', 'T'));
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+  });
+}
+
+function formatTime(timestampStr: string): string {
+  const d = new Date(timestampStr.replace(' ', 'T'));
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatSuiteDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
 
 // ── HTML Template ────────────────────────────────────────────────────────────
 
-function buildEmailHTML(): string {
+function buildEmailHTML(summary: PlaygroundSummary): string {
+  const { totalSuites, passed, failed, suites, runDate, runTimestamp, endTimestamp } = summary;
+  const passRate = totalSuites > 0 ? Math.round((passed / totalSuites) * 100) : 0;
   const rateColor = passRate >= 95 ? '#00E676' : passRate >= 80 ? '#FFD600' : '#FF5252';
-  const rateBg = passRate >= 95 ? 'rgba(0,230,118,0.1)' : passRate >= 80 ? 'rgba(255,214,0,0.1)' : 'rgba(255,82,82,0.1)';
 
-  // Progress ring SVG (circular gauge)
-  const circumference = 2 * Math.PI * 42;
-  const dashOffset = circumference - (passRate / 100) * circumference;
+  const durationSec = computeDurationSeconds(runTimestamp, endTimestamp);
+  const duration = formatDuration(durationSec);
+  const dateDisplay = formatDate(runDate);
+  const timeDisplay = formatTime(runTimestamp);
 
-  const moduleRows = modules.map(m => {
-    const barWidth = m.rate;
-    const barColor = m.rate === 100 ? '#00E676' : m.rate >= 90 ? '#FFD600' : '#FF5252';
-    const statusDot = m.fail === 0
-      ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#00E676;margin-right:8px;"></span>'
-      : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FF5252;margin-right:8px;"></span>';
-    return `<tr>
-      <td style="padding:14px 16px;border-bottom:1px solid #1e2a3a;font-size:14px;color:#e0e0e0;">${statusDot}${m.module}</td>
-      <td style="padding:14px 12px;border-bottom:1px solid #1e2a3a;text-align:center;color:#00E676;font-weight:600;">${m.pass}</td>
-      <td style="padding:14px 12px;border-bottom:1px solid #1e2a3a;text-align:center;color:${m.fail > 0 ? '#FF5252' : '#4a5568'};font-weight:600;">${m.fail}</td>
-      <td style="padding:14px 16px;border-bottom:1px solid #1e2a3a;width:140px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="flex:1;height:6px;background:#1e2a3a;border-radius:3px;overflow:hidden;">
-            <div style="width:${barWidth}%;height:100%;background:${barColor};border-radius:3px;"></div>
-          </div>
-          <span style="font-size:12px;font-weight:700;color:${barColor};min-width:36px;text-align:right;">${m.rate}%</span>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
+  const categories = groupByCategory(suites);
+  const failedSuites = suites.filter(s => s.status === 'fail');
 
-  const failedRows = failedTests.map((t, i) => `<tr>
-    <td style="padding:12px 14px;border-bottom:1px solid #1e2a3a;font-size:13px;color:#ccc;">
-      <span style="color:#FF5252;font-weight:600;margin-right:6px;">#${i + 1}</span>${t.name}
-    </td>
-    <td style="padding:12px 14px;border-bottom:1px solid #1e2a3a;">
-      <span style="background:#1e2a3a;color:#64B5F6;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;">${t.module}</span>
-    </td>
-    <td style="padding:12px 14px;border-bottom:1px solid #1e2a3a;font-size:12px;color:#78909C;max-width:200px;">${t.error}</td>
-  </tr>`).join('');
+  const reportBaseUrl = process.env.REPORT_BASE_URL || 'https://yamini-pal-singh.github.io/automation-testing';
+
+  // Build category rows with grouped suites
+  let categoryTableRows = '';
+  for (const group of categories) {
+    const catRate = group.suites.length > 0
+      ? Math.round((group.passed / group.suites.length) * 100)
+      : 0;
+    const catRateColor = catRate === 100 ? '#00E676' : catRate >= 80 ? '#FFD600' : '#FF5252';
+
+    // Category header row
+    categoryTableRows += `
+      <tr>
+        <td colspan="4" style="padding:12px 16px 10px;background:#1a1f3d;border-bottom:1px solid #2a2f5a;">
+          <table style="width:100%;border-collapse:collapse;"><tr>
+            <td style="font-size:13px;font-weight:700;color:#B388FF;text-transform:uppercase;letter-spacing:1px;">
+              ${group.category}
+            </td>
+            <td style="text-align:right;font-size:11px;color:#78909C;">
+              <span style="color:${catRateColor};font-weight:700;">${catRate}%</span>
+              &nbsp;&middot;&nbsp; ${group.passed}/${group.suites.length} passed
+              &nbsp;&middot;&nbsp; ${formatSuiteDuration(group.totalDuration)}
+            </td>
+          </tr></table>
+        </td>
+      </tr>`;
+
+    // Individual suite rows
+    for (const suite of group.suites) {
+      const isPassed = suite.status === 'pass';
+      const statusIcon = isPassed
+        ? '<span style="color:#00E676;font-size:16px;font-weight:700;">&#10003;</span>'
+        : '<span style="color:#FF5252;font-size:16px;font-weight:700;">&#10007;</span>';
+      const nameColor = isPassed ? '#e0e0e0' : '#FF8A80';
+      const failReason = !isPassed && suite.failure_reason
+        ? `<div style="font-size:11px;color:#78909C;margin-top:3px;">${suite.failure_reason}</div>`
+        : '';
+
+      categoryTableRows += `
+        <tr>
+          <td style="padding:10px 16px 10px 28px;border-bottom:1px solid #1e2a3a;font-size:13px;color:${nameColor};">
+            ${suite.name}${failReason}
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #1e2a3a;text-align:center;">
+            ${statusIcon}
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #1e2a3a;text-align:center;font-size:12px;color:#90A4AE;">
+            ${formatSuiteDuration(suite.duration_s)}
+          </td>
+          <td style="padding:10px 16px;border-bottom:1px solid #1e2a3a;font-size:12px;color:#546E7A;">
+            ${!isPassed && suite.failure_reason ? suite.failure_reason : '—'}
+          </td>
+        </tr>`;
+    }
+  }
+
+  // Build failed tests section
+  let failedSection = '';
+  if (failedSuites.length > 0) {
+    let failedRows = '';
+    failedSuites.forEach((t, i) => {
+      failedRows += `
+        <tr>
+          <td style="padding:12px 14px;border-bottom:1px solid #1e2a3a;font-size:13px;color:#ccc;">
+            <span style="color:#FF5252;font-weight:600;margin-right:6px;">#${i + 1}</span>${t.name}
+          </td>
+          <td style="padding:12px 14px;border-bottom:1px solid #1e2a3a;">
+            <span style="background:#1e2a3a;color:#B388FF;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;">${t.category}</span>
+          </td>
+          <td style="padding:12px 14px;border-bottom:1px solid #1e2a3a;font-size:12px;color:#FF8A80;max-width:220px;">
+            ${t.failure_reason || 'Unknown error'}
+          </td>
+        </tr>`;
+    });
+
+    failedSection = `
+      <div style="padding:0 24px 20px;">
+        <table style="width:100%;border-collapse:collapse;"><tr>
+          <td style="padding:0 0 12px;">
+            <table style="border-collapse:collapse;"><tr>
+              <td style="width:4px;background:#FF5252;border-radius:2px;"></td>
+              <td style="padding-left:12px;">
+                <span style="font-size:14px;color:#FF5252;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">
+                  ${failedSuites.length} Failed Test${failedSuites.length > 1 ? 's' : ''}
+                </span>
+              </td>
+            </tr></table>
+          </td>
+        </tr></table>
+        <table style="width:100%;border-collapse:collapse;background:#141c2e;border-radius:10px;overflow:hidden;border:1px solid #2a1a1a;">
+          <thead>
+            <tr style="background:#1a2540;">
+              <th style="padding:10px 14px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Test</th>
+              <th style="padding:10px 14px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Category</th>
+              <th style="padding:10px 14px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Error</th>
+            </tr>
+          </thead>
+          <tbody>${failedRows}</tbody>
+        </table>
+      </div>`;
+  }
 
   return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0e17;">
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0a0e17;-webkit-text-size-adjust:100%;">
 
-<div style="max-width:660px;margin:0 auto;background:#0f1623;border-radius:0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0e17;">
+<tr><td align="center" style="padding:16px 0;">
 
-  <!-- ═══ HEADER ═══ -->
-  <div style="background:linear-gradient(135deg,#0D47A1 0%,#1565C0 40%,#00838F 100%);padding:36px 32px 28px;">
-    <table style="width:100%;"><tr>
-      <td>
-        <div style="display:inline-block;width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:10px;text-align:center;line-height:40px;font-size:20px;margin-bottom:12px;">🎯</div>
+<table role="presentation" width="660" cellpadding="0" cellspacing="0" style="max-width:660px;width:100%;background:#0f1623;">
+
+  <!-- HEADER -->
+  <tr><td style="background:linear-gradient(135deg,#0D47A1 0%,#1565C0 40%,#00838F 100%);padding:36px 32px 28px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="vertical-align:top;">
+        <div style="display:inline-block;width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:10px;text-align:center;line-height:40px;font-size:20px;margin-bottom:12px;">&#127919;</div>
         <h1 style="margin:8px 0 2px;font-size:24px;font-weight:800;color:white;letter-spacing:-0.5px;">Playground QC Report</h1>
         <p style="margin:0 0 2px;font-size:14px;color:rgba(255,255,255,0.8);">Shunyalabs Playground Automation</p>
-        <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.5);">${runDate} &bull; ${runTime} &bull; Duration: ${duration}</p>
+        <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.5);">${dateDisplay} &bull; ${timeDisplay} &bull; Duration: ${duration}</p>
       </td>
-      <td style="text-align:right;vertical-align:top;">
+      <td style="text-align:right;vertical-align:top;width:120px;">
         <div style="background:rgba(255,255,255,0.12);border-radius:12px;padding:12px 16px;display:inline-block;">
           <div style="font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;">Pass Rate</div>
           <div style="font-size:36px;font-weight:800;color:${rateColor};line-height:1.1;">${passRate}%</div>
         </div>
       </td>
     </tr></table>
-  </div>
+  </td></tr>
 
-  <!-- ═══ KPI STRIP ═══ -->
-  <div style="background:#141c2e;padding:0;">
-    <table style="width:100%;border-collapse:collapse;">
+  <!-- KPI STRIP -->
+  <tr><td style="background:#141c2e;padding:0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
       <tr>
-        <td style="padding:20px;text-align:center;border-right:1px solid #1e2a3a;width:25%;">
-          <div style="font-size:28px;font-weight:800;color:#E0E0E0;">${totalTests}</div>
+        <td width="20%" style="padding:20px;text-align:center;border-right:1px solid #1e2a3a;">
+          <div style="font-size:28px;font-weight:800;color:#E0E0E0;">${totalSuites}</div>
           <div style="font-size:10px;color:#607D8B;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;">Total</div>
         </td>
-        <td style="padding:20px;text-align:center;border-right:1px solid #1e2a3a;width:25%;">
+        <td width="20%" style="padding:20px;text-align:center;border-right:1px solid #1e2a3a;">
           <div style="font-size:28px;font-weight:800;color:#00E676;">${passed}</div>
           <div style="font-size:10px;color:#607D8B;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;">Passed</div>
         </td>
-        <td style="padding:20px;text-align:center;border-right:1px solid #1e2a3a;width:25%;">
+        <td width="20%" style="padding:20px;text-align:center;border-right:1px solid #1e2a3a;">
           <div style="font-size:28px;font-weight:800;color:#FF5252;">${failed}</div>
           <div style="font-size:10px;color:#607D8B;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;">Failed</div>
         </td>
-        <td style="padding:20px;text-align:center;width:25%;">
-          <div style="font-size:28px;font-weight:800;color:#64B5F6;">${duration}</div>
+        <td width="20%" style="padding:20px;text-align:center;border-right:1px solid #1e2a3a;">
+          <div style="font-size:28px;font-weight:800;color:${rateColor};">${passRate}%</div>
+          <div style="font-size:10px;color:#607D8B;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;">Pass Rate</div>
+        </td>
+        <td width="20%" style="padding:20px;text-align:center;">
+          <div style="font-size:24px;font-weight:800;color:#64B5F6;">${duration}</div>
           <div style="font-size:10px;color:#607D8B;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;">Duration</div>
         </td>
       </tr>
     </table>
-  </div>
+  </td></tr>
 
-  <!-- ═══ QUICK SUMMARY BAR ═══ -->
-  <div style="padding:16px 24px;background:#0f1623;">
-    <div style="background:#141c2e;border-radius:10px;padding:12px 16px;display:flex;align-items:center;">
-      <div style="flex:1;">
-        <div style="height:8px;background:#1e2a3a;border-radius:4px;overflow:hidden;">
-          <div style="width:${passRate}%;height:100%;background:linear-gradient(90deg,#00C853,#00E676);border-radius:4px;"></div>
-        </div>
-      </div>
-      <span style="margin-left:12px;font-size:12px;color:#90A4AE;font-weight:600;">${passed} of ${totalTests} tests passing</span>
-    </div>
-  </div>
+  <!-- PROGRESS BAR -->
+  <tr><td style="padding:16px 24px;background:#0f1623;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#141c2e;border-radius:10px;">
+      <tr>
+        <td style="padding:14px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="padding-right:12px;">
+              <div style="height:8px;background:#1e2a3a;border-radius:4px;overflow:hidden;">
+                <div style="width:${passRate}%;height:100%;background:linear-gradient(90deg,#00C853,#00E676);border-radius:4px;"></div>
+              </div>
+            </td>
+            <td style="white-space:nowrap;font-size:12px;color:#90A4AE;font-weight:600;width:1%;">
+              ${passed} of ${totalSuites} tests passing
+            </td>
+          </tr></table>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
 
-  <!-- ═══ RESULTS BY MODULE ═══ -->
-  <div style="padding:8px 24px 20px;">
-    <h3 style="font-size:14px;color:#90A4AE;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;font-weight:600;">Results by Module</h3>
-    <table style="width:100%;border-collapse:collapse;background:#141c2e;border-radius:10px;overflow:hidden;">
+  <!-- RESULTS BY CATEGORY -->
+  <tr><td style="padding:8px 24px 20px;">
+    <h3 style="font-size:14px;color:#90A4AE;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;font-weight:600;">Results by Category</h3>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#141c2e;border-radius:10px;overflow:hidden;">
       <thead>
         <tr style="background:#1a2540;">
-          <th style="padding:12px 16px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Module</th>
-          <th style="padding:12px 12px;text-align:center;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Pass</th>
-          <th style="padding:12px 12px;text-align:center;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Fail</th>
-          <th style="padding:12px 16px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Coverage</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Suite</th>
+          <th style="padding:12px 12px;text-align:center;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;width:60px;">Status</th>
+          <th style="padding:12px 12px;text-align:center;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;width:70px;">Duration</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Failure Reason</th>
         </tr>
       </thead>
-      <tbody>${moduleRows}</tbody>
+      <tbody>${categoryTableRows}</tbody>
     </table>
-  </div>
+  </td></tr>
 
-  <!-- ═══ FAILED TESTS ═══ -->
-  ${failed > 0 ? `
-  <div style="padding:0 24px 20px;">
-    <h3 style="font-size:14px;color:#FF5252;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;font-weight:600;">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FF5252;margin-right:8px;"></span>
-      ${failed} Failed Tests
-    </h3>
-    <table style="width:100%;border-collapse:collapse;background:#141c2e;border-radius:10px;overflow:hidden;">
-      <thead>
-        <tr style="background:#1a2540;">
-          <th style="padding:10px 14px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Test</th>
-          <th style="padding:10px 14px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Module</th>
-          <th style="padding:10px 14px;text-align:left;font-size:11px;color:#607D8B;text-transform:uppercase;letter-spacing:1px;">Root Cause</th>
-        </tr>
-      </thead>
-      <tbody>${failedRows}</tbody>
-    </table>
-  </div>
-  ` : ''}
+  <!-- FAILED TESTS (conditional) -->
+  ${failedSection}
 
-  <!-- ═══ CTA BUTTONS ═══ -->
-  <div style="padding:8px 24px 28px;text-align:center;">
-    <table style="margin:0 auto;"><tr>
+  <!-- CTA BUTTONS -->
+  <tr><td style="padding:8px 24px 28px;text-align:center;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
       <td style="padding:0 6px;">
-        <a href="https://yamini-pal-singh.github.io/automation-testing/asr-testing/reports/Playground-Report.html"
+        <a href="${reportBaseUrl}/asr-testing/reports/Playground-Report.html"
            style="display:inline-block;background:linear-gradient(135deg,#1565C0,#00838F);color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:0.3px;">
-          📊 View Full Dashboard
+          &#128202; View Full Dashboard
         </a>
       </td>
       <td style="padding:0 6px;">
         <a href="https://github.com/yamini-pal-singh/asr-testing"
            style="display:inline-block;background:#1e2a3a;color:#64B5F6;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;border:1px solid #2a3a4a;letter-spacing:0.3px;">
-          📄 View Test Cases
+          &#128196; View Test Cases
         </a>
       </td>
     </tr></table>
-  </div>
+  </td></tr>
 
-  <!-- ═══ FOOTER ═══ -->
-  <div style="background:#0a0e17;padding:24px 24px;text-align:center;border-top:1px solid #1e2a3a;">
-    <p style="margin:0 0 6px;font-size:13px;color:#546E7A;">Thanks & Regards,</p>
-    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#B0BEC5;">Playground Automation BOT 🤖 by Yamini</p>
+  <!-- FOOTER -->
+  <tr><td style="background:#0a0e17;padding:24px;text-align:center;border-top:1px solid #1e2a3a;">
+    <p style="margin:0 0 6px;font-size:13px;color:#546E7A;">Thanks &amp; Regards,</p>
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#B0BEC5;">Playground Automation BOT &#129302; by Yamini</p>
     <p style="margin:0;font-size:11px;color:#37474F;">This is an automated report generated from the latest test run.</p>
-  </div>
+  </td></tr>
 
-</div>
+</table>
+
+</td></tr>
+</table>
+
 </body></html>`;
 }
 
 // ── Send Email ───────────────────────────────────────────────────────────────
 
 async function sendEmail() {
+  const summary = loadLatestSummary();
+  const { totalSuites, passed, failed, runDate } = summary;
+  const passRate = totalSuites > 0 ? Math.round((passed / totalSuites) * 100) : 0;
+  const dateDisplay = formatDate(runDate);
+
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT || '587'),
@@ -233,18 +387,25 @@ async function sendEmail() {
     },
   });
 
-  const statusEmoji = passRate >= 95 ? '🟢' : passRate >= 80 ? '🟡' : '🔴';
+  const statusEmoji = passRate >= 95 ? '\u{1F7E2}' : passRate >= 80 ? '\u{1F7E1}' : '\u{1F534}';
+
+  const recipients = process.env.REPORT_EMAIL_TO;
+  if (!recipients) {
+    console.error('❌ REPORT_EMAIL_TO is not set in .env');
+    process.exit(1);
+  }
 
   const mailOptions = {
     from: process.env.REPORT_EMAIL_FROM || process.env.SMTP_USER,
-    to: 'yamini@unitedwecare.com',
-    subject: `${statusEmoji} Playground QC — ${passRate}% Pass Rate (${passed}/${totalTests}) — ${runDate}`,
-    html: buildEmailHTML(),
+    to: recipients,
+    subject: `${statusEmoji} Playground QC — ${passRate}% Pass Rate (${passed}/${totalSuites}) — ${dateDisplay}`,
+    html: buildEmailHTML(summary),
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to yamini@unitedwecare.com — MessageId: ${info.messageId}`);
+    console.log(`✅ Email sent to ${recipients.trim()} — MessageId: ${info.messageId}`);
+    console.log(`   📊 Summary: ${passed}/${totalSuites} passed (${passRate}%) | ${failed} failed`);
   } catch (error: any) {
     console.error(`❌ Email failed: ${error.message}`);
     process.exit(1);

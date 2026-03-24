@@ -169,6 +169,25 @@ echo "" | tee -a "$LOG_FILE"
 echo "   ✅ Summary JSON saved: $SUMMARY_JSON" | tee -a "$LOG_FILE"
 
 # ════════════════════════════════════════════════════════════════
+# WRITE SUITE SUMMARY TO GOOGLE SHEET
+# ════════════════════════════════════════════════════════════════
+echo "" | tee -a "$LOG_FILE"
+echo "── Writing Suite Summary to Google Sheet ─────────" | tee -a "$LOG_FILE"
+
+if npx ts-node -e "
+const fs = require('fs');
+const { writeDailySummarySheet } = require('./src/utils/playgroundSheetWriter');
+const summary = JSON.parse(fs.readFileSync('$SUMMARY_JSON', 'utf-8'));
+writeDailySummarySheet(summary.suites, summary.runDate).then(() => {
+  console.log('Done');
+}).catch((e) => console.error(e.message));
+" >> "$LOG_FILE" 2>&1; then
+  echo "   ✅ Suite summary written to Google Sheet" | tee -a "$LOG_FILE"
+else
+  echo "   ⚠️  Suite summary sheet write failed" | tee -a "$LOG_FILE"
+fi
+
+# ════════════════════════════════════════════════════════════════
 # GENERATE PLAYGROUND HTML REPORT
 # ════════════════════════════════════════════════════════════════
 echo "" | tee -a "$LOG_FILE"

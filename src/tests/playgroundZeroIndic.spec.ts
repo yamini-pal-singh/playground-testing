@@ -40,6 +40,10 @@ import {
   printSummary,
   TestResult,
 } from '../utils/reporter';
+import {
+  writePlaygroundResults,
+  PlaygroundSuiteResult,
+} from '../utils/playgroundSheetWriter';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -108,6 +112,36 @@ async function postTranscription(
 
 let testData: TestDataRow[] = [];
 
+/** Collects per-audio results from ALL features for the playground output sheet */
+const allPlaygroundResults: PlaygroundSuiteResult[] = [];
+
+/** Helper to push a playground result for any feature */
+function pushPlaygroundResult(
+  feature: string,
+  row: TestDataRow,
+  res: { status: number; body: any; latencyMs: number; ok: boolean },
+  pass: boolean,
+  failureReason: string,
+  wer = -1,
+  cer = -1,
+) {
+  allPlaygroundResults.push({
+    date: getLocalDateStr(),
+    feature,
+    category: 'Zero Indic Features',
+    audio_file: path.basename(row.audio_path),
+    language: row.lang,
+    lang_code: row.lang_code,
+    status: pass ? 'PASS' : 'FAIL',
+    failure_reason: failureReason,
+    latency_ms: res.latencyMs,
+    wer,
+    cer,
+    api_response_preview: JSON.stringify(res.body).substring(0, 200),
+    timestamp: new Date().toISOString(),
+  });
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // 1. BASELINE TRANSCRIPTION
 // ════════════════════════════════════════════════════════════════════════════
@@ -157,15 +191,17 @@ test.describe('Zero Indic — 1. Baseline Transcription', () => {
 
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | WER: ${(wer * 100).toFixed(1)}% | CER: ${(cer * 100).toFixed(1)}% | ${pass ? '✅ PASS' : '❌ FAIL'}`);
 
+      const failReason = !res.ok ? `API error ${res.status}` : !pass ? `WER=${(wer * 100).toFixed(1)}% CER=${(cer * 100).toFixed(1)}%` : '';
       results.push({
         date: dateStr, audio_path: row.audio_path, lang: row.lang, lang_code: row.lang_code,
         detected_language: detectedLang, lang_code_match: detectedLang.toLowerCase().includes(row.lang_code.toLowerCase()),
         expected_text: row.text, predicted_text: predictedText, duration: row.duration,
         latency_ms: res.latencyMs, wer, cer,
         test_status: pass ? 'PASS' : 'FAIL',
-        failure_reason: !res.ok ? `API error ${res.status}` : !pass ? `WER=${(wer * 100).toFixed(1)}% CER=${(cer * 100).toFixed(1)}%` : '',
+        failure_reason: failReason,
         timestamp: new Date().toISOString(),
       });
+      pushPlaygroundResult('Baseline Transcription', row, res, pass, failReason, wer, cer);
     }
 
     const passCount = results.filter(r => r.test_status === 'PASS').length;
@@ -205,7 +241,9 @@ test.describe('Zero Indic — 2. Translation', () => {
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Has translation: ${hasTranslation}`);
       if (hasTranslation) console.log(`  Translation (preview): ${String(translatedText).substring(0, 150)}...`);
 
-      if (res.ok && hasTranslation) { pass++; } else { fail++; }
+      const ok = res.ok && hasTranslation;
+      if (ok) { pass++; } else { fail++; }
+      pushPlaygroundResult('Translation', row, res, ok, ok ? '' : `No translation returned (status ${res.status})`);
     }
     console.log(`\n=== Translation: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -244,7 +282,9 @@ test.describe('Zero Indic — 3. Transliteration', () => {
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Has transliteration: ${hasTranslit}`);
       if (hasTranslit) console.log(`  Transliteration (preview): ${String(translitText).substring(0, 150)}...`);
 
-      if (res.ok && hasTranslit) { pass++; } else { fail++; }
+      const ok = res.ok && hasTranslit;
+      if (ok) { pass++; } else { fail++; }
+      pushPlaygroundResult('Transliteration', row, res, ok, ok ? '' : `No transliteration returned (status ${res.status})`);
     }
     console.log(`\n=== Transliteration: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -282,7 +322,9 @@ test.describe('Zero Indic — 4. Speaker Diarization', () => {
 
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Speakers: ${speakerCount} | Segments: ${segments.length}`);
 
-      if (res.ok && hasText) { pass++; } else { fail++; }
+      const ok = res.ok && hasText;
+      if (ok) { pass++; } else { fail++; }
+      pushPlaygroundResult('Speaker Diarization', row, res, ok, ok ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Speaker Diarization: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -323,7 +365,9 @@ test.describe('Zero Indic — 5. Word Timestamps', () => {
         console.log(`  Sample: "${w.word}" [${w.start}s - ${w.end}s] confidence=${w.probability}`);
       }
 
-      if (res.ok && hasText) { pass++; } else { fail++; }
+      const ok5 = res.ok && hasText;
+      if (ok5) { pass++; } else { fail++; }
+      pushPlaygroundResult('Word Timestamps', row, res, ok5, ok5 ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Word Timestamps: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -361,7 +405,9 @@ test.describe('Zero Indic — 6. Profanity Hashing', () => {
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Original length: ${originalText.length} | Clean length: ${String(cleanText).length}`);
       if (cleanText) console.log(`  Clean text (preview): ${String(cleanText).substring(0, 150)}...`);
 
-      if (res.ok && hasResult) { pass++; } else { fail++; }
+      const ok6 = res.ok && hasResult;
+      if (ok6) { pass++; } else { fail++; }
+      pushPlaygroundResult('Profanity Hashing', row, res, ok6, ok6 ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Profanity Hashing: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -402,7 +448,9 @@ test.describe('Zero Indic — 7. Custom Keyword Hashing', () => {
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Keywords: ${keywords.join(', ')}`);
       if (cleanText) console.log(`  Hashed text (preview): ${String(cleanText).substring(0, 150)}...`);
 
-      if (res.ok && hasResult) { pass++; } else { fail++; }
+      const ok7 = res.ok && hasResult;
+      if (ok7) { pass++; } else { fail++; }
+      pushPlaygroundResult('Custom Keyword Hashing', row, res, ok7, ok7 ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Custom Keyword Hashing: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -443,7 +491,9 @@ test.describe('Zero Indic — 8. Intent Detection', () => {
 
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Intent: ${intentLabel} | Confidence: ${confidence}`);
 
-      if (res.ok && hasResult) { pass++; } else { fail++; }
+      const ok8 = res.ok && hasResult;
+      if (ok8) { pass++; } else { fail++; }
+      pushPlaygroundResult('Intent Detection', row, res, ok8, ok8 ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Intent Detection: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -481,7 +531,9 @@ test.describe('Zero Indic — 9. Sentiment Analysis', () => {
 
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Sentiment: ${label} | Score: ${JSON.stringify(score)}`);
 
-      if (res.ok && hasResult) { pass++; } else { fail++; }
+      const ok9 = res.ok && hasResult;
+      if (ok9) { pass++; } else { fail++; }
+      pushPlaygroundResult('Sentiment Analysis', row, res, ok9, ok9 ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Sentiment Analysis: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -519,7 +571,9 @@ test.describe('Zero Indic — 10. Emotion Diarization', () => {
 
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Emotion segments: ${segments.length} | Emotions: ${emotions.join(', ') || 'N/A'}`);
 
-      if (res.ok && hasResult) { pass++; } else { fail++; }
+      const ok10 = res.ok && hasResult;
+      if (ok10) { pass++; } else { fail++; }
+      pushPlaygroundResult('Emotion Diarization', row, res, ok10, ok10 ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Emotion Diarization: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -557,7 +611,9 @@ test.describe('Zero Indic — 11. Summarisation', () => {
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Has summary: ${hasSummary}`);
       if (hasSummary) console.log(`  Summary (preview): ${String(summary).substring(0, 200)}...`);
 
-      if (res.ok && hasResult) { pass++; } else { fail++; }
+      const ok11 = res.ok && hasResult;
+      if (ok11) { pass++; } else { fail++; }
+      pushPlaygroundResult('Summarisation', row, res, ok11, ok11 ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Summarisation: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
@@ -599,9 +655,29 @@ test.describe('Zero Indic — 12. Keyword Normalisation', () => {
       console.log(`  Status: ${res.status} | Latency: ${res.latencyMs}ms | Keywords: ${keywords.join(', ')}`);
       if (normalizedText) console.log(`  Normalized (preview): ${String(normalizedText).substring(0, 150)}...`);
 
-      if (res.ok && hasResult) { pass++; } else { fail++; }
+      const ok12 = res.ok && hasResult;
+      if (ok12) { pass++; } else { fail++; }
+      pushPlaygroundResult('Keyword Normalisation', row, res, ok12, ok12 ? '' : `API error ${res.status}`);
     }
     console.log(`\n=== Keyword Normalisation: ${pass}/${pass + fail} passed ===\n`);
     expect(pass).toBeGreaterThan(0);
   });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// GLOBAL TEARDOWN — Write all feature results to Playground Output Sheet
+// ════════════════════════════════════════════════════════════════════════════
+
+test.afterAll(async () => {
+  if (allPlaygroundResults.length > 0) {
+    const dateStr = getLocalDateStr();
+    const sheetName = `Playground-${dateStr}`;
+    console.log(`\n📊 Writing ${allPlaygroundResults.length} results to Playground sheet "${sheetName}"...`);
+    try {
+      await writePlaygroundResults(allPlaygroundResults, sheetName);
+      console.log(`✅ Playground output sheet updated successfully`);
+    } catch (e: any) {
+      console.error(`⚠️ Playground sheet write failed: ${e.message}`);
+    }
+  }
 });
