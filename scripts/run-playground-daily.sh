@@ -39,6 +39,21 @@ if [ -f "$HOME/.nvm/nvm.sh" ]; then
 fi
 export PATH="/usr/local/bin:$HOME/.nvm/versions/node/$(ls "$HOME/.nvm/versions/node" 2>/dev/null | sort -V | tail -1)/bin:$PATH"
 
+# ── Check auth freshness ──────────────────────────────────────────────────────
+AUTH_FILE="$PROJECT_DIR/auth/playground-auth.json"
+if [ -f "$AUTH_FILE" ]; then
+  AUTH_AGE_DAYS=$(( ( $(date +%s) - $(stat -f %m "$AUTH_FILE") ) / 86400 ))
+  if [ "$AUTH_AGE_DAYS" -ge 7 ]; then
+    echo "  ⚠️  Auth state is ${AUTH_AGE_DAYS} days old — UI tests may fail." | tee -a "$LOG_FILE"
+    echo "  💡 Run: npm run playground:login  to refresh" | tee -a "$LOG_FILE"
+  else
+    echo "  ✅ Auth state is ${AUTH_AGE_DAYS} day(s) old" | tee -a "$LOG_FILE"
+  fi
+else
+  echo "  ❌ Auth file missing! UI tests will fail." | tee -a "$LOG_FILE"
+  echo "  💡 Run: npm run playground:login" | tee -a "$LOG_FILE"
+fi
+
 # ── Tracking ──────────────────────────────────────────────────────────────────
 TOTAL=0
 PASS=0
