@@ -53,14 +53,13 @@ const INPUT_DIR = path.resolve(process.cwd(), 'input');
 const SHEET_NAME = 'indicvoices_sample';
 const MODEL = 'zero-indic';
 
-/** ISO → full language name mapping (required by zero-indic API) */
-const ISO_TO_LANG: Record<string, string> = {
-  hi: 'Hindi', te: 'Telugu', kn: 'Kannada', bn: 'Bengali',
-  ta: 'Tamil', ml: 'Malayalam', mr: 'Marathi', gu: 'Gujarati',
-  pa: 'Punjabi', or: 'Odia', as: 'Assamese', ur: 'Urdu',
-  en: 'English', sa: 'Sanskrit', mai: 'Maithili', kok: 'Konkani',
-  mni: 'Manipuri', ne: 'Nepali', sd: 'Sindhi', doi: 'Dogri',
-};
+/** ISO → full language name mapping — auto-generated from ZERO_INDIC_CONFIG (all 55 languages) */
+const ISO_TO_LANG: Record<string, string> = Object.fromEntries(
+  Object.entries(ZERO_INDIC_CONFIG.supportedLanguages).map(([name, code]) => [code, name])
+);
+
+/** Set of supported language codes for filtering non-Indic test data */
+const SUPPORTED_LANG_CODES = new Set(Object.values(ZERO_INDIC_CONFIG.supportedLanguages));
 
 const AUTH = getAuthHeaders();
 
@@ -69,15 +68,40 @@ const AUTH = getAuthHeaders();
 function resolveAudioPath(row: TestDataRow): string {
   const audioPath = row.audio_path;
   if (path.isAbsolute(audioPath)) return audioPath;
-  // Try relative to input/
-  const candidate = path.resolve(INPUT_DIR, audioPath);
-  if (fs.existsSync(candidate)) return candidate;
-  // Try relative to input/indicvoices_data/audio/
-  return path.resolve(INPUT_DIR, 'indicvoices_data', 'audio', path.basename(audioPath));
+
+  const basename = path.basename(audioPath);
+  const searchDirs = [
+    // Try relative to input/ (exact path from sheet)
+    path.resolve(INPUT_DIR, audioPath),
+    // Try in language-named subfolder: input/indicvoices_data/audio/<Language>/
+    path.resolve(INPUT_DIR, 'indicvoices_data', 'audio', row.lang, basename),
+    // Try in Indic subfolder (Hindi_0.wav etc.)
+    path.resolve(INPUT_DIR, 'indicvoices_data', 'audio', 'Indic', basename),
+    // Try flat in audio dir
+    path.resolve(INPUT_DIR, 'indicvoices_data', 'audio', basename),
+    // Try in CodeSwitch
+    path.resolve(INPUT_DIR, 'CodeSwitchvoices_data', 'audio', basename),
+  ];
+
+  for (const candidate of searchDirs) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  // Return best guess for error reporting
+  return searchDirs[0];
 }
 
+/** Map of lowercase language names → proper case (for sheets that use full names as codes) */
+const LANG_NAME_LOOKUP: Record<string, string> = Object.fromEntries(
+  Object.keys(ZERO_INDIC_CONFIG.supportedLanguages).map(name => [name.toLowerCase(), name])
+);
+
 function langName(code: string): string {
-  return ISO_TO_LANG[code] || code;
+  // Try ISO code first (e.g., 'hi' → 'Hindi')
+  if (ISO_TO_LANG[code]) return ISO_TO_LANG[code];
+  // Try full name lookup (e.g., 'english' → 'English', 'hindi' → 'Hindi')
+  if (LANG_NAME_LOOKUP[code.toLowerCase()]) return LANG_NAME_LOOKUP[code.toLowerCase()];
+  // Return as-is (title-cased as best effort)
+  return code.charAt(0).toUpperCase() + code.slice(1);
 }
 
 /** Generic multipart POST to the transcription endpoint with extra form fields */
@@ -151,8 +175,15 @@ test.describe('Zero Indic — 1. Baseline Transcription', () => {
 
   test.beforeAll(async () => {
     const sheetId = getInputSpreadsheetIdForModel('zero-indic');
-    testData = await readFromGoogleSheet(SHEET_NAME, sheetId);
-    console.log(`\nLoaded ${testData.length} test cases from Google Sheet "${SHEET_NAME}"\n`);
+    const rawData = await readFromGoogleSheet(SHEET_NAME, sheetId);
+    // Filter out non-Indic languages (Afrikaans, Arabic, Belarusian, etc.)
+    testData = rawData.filter(row => {
+      const code = row.lang_code?.toLowerCase();
+      if (SUPPORTED_LANG_CODES.has(code) || ISO_TO_LANG[code] || LANG_NAME_LOOKUP[code]) return true;
+      console.warn(`  ⏭️ Skipping unsupported language: ${row.lang} (${code})`);
+      return false;
+    });
+    console.log(`\nLoaded ${testData.length} test cases (${rawData.length - testData.length} non-Indic skipped) from Google Sheet "${SHEET_NAME}"\n`);
   });
 
   test.afterAll(async () => {

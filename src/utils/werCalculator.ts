@@ -77,6 +77,7 @@ export function calculateWER(reference: string, hypothesis: string): number {
  */
 function normalizeText(text: string): string {
   return text
+    .normalize('NFC') // Normalize Unicode (critical for Indic scripts)
     .trim()
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, '') // remove punctuation, keep letters/numbers/spaces
