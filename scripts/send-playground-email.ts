@@ -149,7 +149,7 @@ function buildEmailHTML(summary: PlaygroundSummary): string {
   const failedSuites = suites.filter(s => s.status === 'fail');
 
   const reportBaseUrl = process.env.REPORT_BASE_URL || 'https://yamini-pal-singh.github.io/automation-testing';
-  const dashboardUrl = `${reportBaseUrl}/asr-testing/reports/Playground-Report.html`;
+  const dashboardUrl = `${reportBaseUrl}/Playground-Report.html`;
   const playgroundSheetId = process.env.GOOGLE_SHEET_ID_PLAYGROUND_OUTPUT || '1Mw1CFU6yV6Q-8N_qLU09gAdj6fe2qg0ZsqZPn9SUE3s';
   const masterSheetUrl = `https://docs.google.com/spreadsheets/d/${playgroundSheetId}/edit#gid=1927033749`;
 
