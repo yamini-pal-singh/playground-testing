@@ -105,21 +105,41 @@ run_test() {
 }
 
 # ════════════════════════════════════════════════════════════════
-# SECTION 1: PLAYGROUND UI TESTS (26 tests)
+# SECTION 1: FUNCTIONAL / UI TESTS (run first)
 # ════════════════════════════════════════════════════════════════
 echo "" | tee -a "$LOG_FILE"
-echo "── Playground UI Tests ───────────────────────────────" | tee -a "$LOG_FILE"
+echo "── Functional / UI Tests ───────────────────────────" | tee -a "$LOG_FILE"
 
-run_test "Playground UI"  "Page Load & Layout"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Page Load'"
-run_test "Playground UI"  "Tab Navigation"              "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Tab Navigation'"
-run_test "Playground UI"  "Model Selection"             "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Model Selection'"
-run_test "Playground UI"  "Language Selection"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Language Selection'"
-run_test "Playground UI"  "Audio Intelligence Features" "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Audio Intelligence'"
-run_test "Playground UI"  "File Upload"                 "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'File Upload'"
-run_test "Playground UI"  "Sample Audio"                "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Sample Audio'"
+run_test "Functional UI"  "Page Load & Layout"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Page Load'"
+run_test "Functional UI"  "Credits"                     "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Credits'"
+run_test "Functional UI"  "Tab Navigation"              "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Tab Navigation'"
+run_test "Functional UI"  "Model Selection"             "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Model Selection'"
+run_test "Functional UI"  "Language Selection"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Language Selection'"
+run_test "Functional UI"  "Audio Intelligence Features" "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Audio Intelligence'"
+run_test "Functional UI"  "File Upload"                 "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'File Upload'"
+run_test "Functional UI"  "Sample Audio"                "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Sample Audio'"
 
 # ════════════════════════════════════════════════════════════════
-# SECTION 2: PLAYGROUND BACKEND — Zero Indic Features (12 tests)
+# SECTION 2: HEALTH CHECK
+# ════════════════════════════════════════════════════════════════
+echo "" | tee -a "$LOG_FILE"
+echo "── Health Check ──────────────────────────────────" | tee -a "$LOG_FILE"
+
+run_test "Health Check"  "API Health & Services"  "npx playwright test src/tests/health.spec.ts --reporter=list --project=api-tests"
+
+# ════════════════════════════════════════════════════════════════
+# SECTION 3: BACKEND API TESTS
+# ════════════════════════════════════════════════════════════════
+echo "" | tee -a "$LOG_FILE"
+echo "── Backend API Tests ───────────────────────────────" | tee -a "$LOG_FILE"
+
+run_test "Backend API"  "STT Models (Indic/Med/Codeswitch)"  "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Speech to Text'"
+run_test "Backend API"  "Error Handling"                      "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Error Handling'"
+run_test "Backend API"  "Response Validation"                 "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Response Validation'"
+run_test "Backend API"  "Multi-format Support"                "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Multi-format'"
+
+# ════════════════════════════════════════════════════════════════
+# SECTION 4: ZERO INDIC FEATURE TESTS
 # ════════════════════════════════════════════════════════════════
 echo "" | tee -a "$LOG_FILE"
 echo "── Zero Indic Backend Features ─────────────────────" | tee -a "$LOG_FILE"
@@ -136,17 +156,6 @@ run_test "Zero Indic Features"  "Sentiment Analysis"       "npx playwright test 
 run_test "Zero Indic Features"  "Emotion Diarization"      "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Emotion Diarization'"
 run_test "Zero Indic Features"  "Summarisation"            "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Summarisation'"
 run_test "Zero Indic Features"  "Keyword Normalisation"    "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Keyword Normalisation'"
-
-# ════════════════════════════════════════════════════════════════
-# SECTION 3: PLAYGROUND BACKEND — API Error Handling & Formats
-# ════════════════════════════════════════════════════════════════
-echo "" | tee -a "$LOG_FILE"
-echo "── Backend API Tests ───────────────────────────────" | tee -a "$LOG_FILE"
-
-run_test "Backend API"  "STT Models (Indic/Med/Codeswitch)"  "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Speech to Text'"
-run_test "Backend API"  "Error Handling"                      "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Error Handling'"
-run_test "Backend API"  "Response Validation"                 "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Response Validation'"
-run_test "Backend API"  "Multi-format Support"                "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Multi-format'"
 
 # ════════════════════════════════════════════════════════════════
 # WRITE DAILY SUMMARY JSON

@@ -29,7 +29,8 @@
     "test:playground-daily": "bash scripts/run-playground-daily.sh",
     "report:playground": "npx ts-node scripts/generate-playground-report.ts",
     "report:playground:open": "npx ts-node scripts/generate-playground-report.ts && open reports/Playground-Report.html",
-    "email:playground": "npx ts-node scripts/send-playground-email.ts"
+    "email:playground": "npx ts-node scripts/send-playground-email.ts",
+    "sheet:master": "npx ts-node scripts/write-master-test-sheet.ts"
   },
   "keywords": [
     "playground",

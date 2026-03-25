@@ -93,8 +93,16 @@ function groupByCategory(suites: SuiteResult[]): CategoryGroup[] {
     list.push(s);
     map.set(s.category, list);
   }
+  // Explicit order: Functional UI first, then Health, Backend, Zero Indic
+  const categoryOrder = ['Functional UI', 'Playground UI', 'Health Check', 'Backend API', 'Zero Indic Features'];
   const groups: CategoryGroup[] = [];
-  for (const [category, items] of map) {
+  const orderedKeys = [...map.keys()].sort((a, b) => {
+    const ai = categoryOrder.findIndex(c => a.includes(c) || c.includes(a));
+    const bi = categoryOrder.findIndex(c => b.includes(c) || c.includes(b));
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+  for (const category of orderedKeys) {
+    const items = map.get(category)!;
     groups.push({
       category,
       suites: items,
