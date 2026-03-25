@@ -346,13 +346,23 @@ function buildEmailHTML(summary: PlaygroundSummary): string {
   <!-- FAILED TESTS (conditional) -->
   ${failedSection}
 
+  <!-- DASHBOARD ATTACHMENT NOTE -->
+  <tr><td style="padding:8px 24px 4px;text-align:center;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#141c2e;border-radius:10px;border:1px solid #1e2a3a;"><tr>
+      <td style="padding:14px 20px;text-align:center;">
+        <span style="font-size:20px;vertical-align:middle;">&#128206;</span>
+        <span style="font-size:13px;color:#90A4AE;font-weight:600;margin-left:6px;">Full Interactive Dashboard attached as HTML — open in browser for charts &amp; drill-down</span>
+      </td>
+    </tr></table>
+  </td></tr>
+
   <!-- CTA BUTTONS -->
-  <tr><td style="padding:8px 24px 28px;text-align:center;">
+  <tr><td style="padding:12px 24px 28px;text-align:center;">
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
       <td style="padding:0 6px;">
         <a href="${dashboardUrl}"
            style="display:inline-block;background:linear-gradient(135deg,#1565C0,#00838F);color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:0.3px;">
-          &#128202; View Full Dashboard
+          &#128202; View Results Sheet
         </a>
       </td>
       <td style="padding:0 6px;">
@@ -405,11 +415,23 @@ async function sendEmail() {
     process.exit(1);
   }
 
+  // Attach the full HTML dashboard report if it exists
+  const reportPath = path.resolve(__dirname, '..', 'reports', 'Playground-Report.html');
+  const attachments: any[] = [];
+  if (fs.existsSync(reportPath)) {
+    attachments.push({
+      filename: `Playground-Dashboard-${runDate}.html`,
+      path: reportPath,
+      contentType: 'text/html',
+    });
+  }
+
   const mailOptions = {
     from: process.env.REPORT_EMAIL_FROM || process.env.SMTP_USER,
     to: recipients,
     subject: `${statusEmoji} Playground QC — ${passRate}% Pass Rate (${passed}/${totalSuites}) — ${dateDisplay}`,
     html: buildEmailHTML(summary),
+    attachments,
   };
 
   try {
