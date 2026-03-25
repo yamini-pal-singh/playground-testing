@@ -204,8 +204,20 @@ echo "── Generating Playground Report ────────────�
 
 if npx ts-node scripts/generate-playground-report.ts >> "$LOG_FILE" 2>&1; then
   echo "   ✅ Playground HTML report generated" | tee -a "$LOG_FILE"
+
+  # Push dashboard to GitHub Pages for stakeholder access
+  GHPAGES_REPO="$HOME/repos/asr-testing"
+  if [ -d "$GHPAGES_REPO/.git" ]; then
+    cp "$REPORTS_DIR/Playground-Report.html" "$GHPAGES_REPO/asr-testing/reports/Playground-Report.html" 2>/dev/null
+    (cd "$GHPAGES_REPO" && git add asr-testing/reports/Playground-Report.html && git commit -m "Update Playground Dashboard — $DATE" && git push origin main) >> "$LOG_FILE" 2>&1
+    if [ $? -eq 0 ]; then
+      echo "   ✅ Dashboard published to GitHub Pages" | tee -a "$LOG_FILE"
+    else
+      echo "   ⚠️  GitHub Pages push failed (may need auth)" | tee -a "$LOG_FILE"
+    fi
+  fi
 else
-  echo "   ⚠️  Report generation failed (script may not exist yet)" | tee -a "$LOG_FILE"
+  echo "   ⚠️  Report generation failed" | tee -a "$LOG_FILE"
 fi
 
 # ════════════════════════════════════════════════════════════════
