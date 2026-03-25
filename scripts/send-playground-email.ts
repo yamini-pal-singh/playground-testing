@@ -148,7 +148,9 @@ function buildEmailHTML(summary: PlaygroundSummary): string {
   const categories = groupByCategory(suites);
   const failedSuites = suites.filter(s => s.status === 'fail');
 
-  const reportBaseUrl = process.env.REPORT_BASE_URL || 'https://yamini-pal-singh.github.io/automation-testing';
+  const playgroundSheetId = process.env.GOOGLE_SHEET_ID_PLAYGROUND_OUTPUT || '1Mw1CFU6yV6Q-8N_qLU09gAdj6fe2qg0ZsqZPn9SUE3s';
+  const dashboardUrl = `https://docs.google.com/spreadsheets/d/${playgroundSheetId}/edit`;
+  const masterSheetUrl = `https://docs.google.com/spreadsheets/d/${playgroundSheetId}/edit#gid=1927033749`;
 
   // Build category rows with grouped suites
   let categoryTableRows = '';
@@ -348,13 +350,13 @@ function buildEmailHTML(summary: PlaygroundSummary): string {
   <tr><td style="padding:8px 24px 28px;text-align:center;">
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
       <td style="padding:0 6px;">
-        <a href="${reportBaseUrl}/asr-testing/reports/Playground-Report.html"
+        <a href="${dashboardUrl}"
            style="display:inline-block;background:linear-gradient(135deg,#1565C0,#00838F);color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:0.3px;">
           &#128202; View Full Dashboard
         </a>
       </td>
       <td style="padding:0 6px;">
-        <a href="https://github.com/yamini-pal-singh/asr-testing"
+        <a href="${masterSheetUrl}"
            style="display:inline-block;background:#1e2a3a;color:#64B5F6;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;border:1px solid #2a3a4a;letter-spacing:0.3px;">
           &#128196; View Test Cases
         </a>
