@@ -40,7 +40,7 @@ export const SUPPORTED_AUDIO_FORMATS = ['MP3', 'WAV', 'FLAC', 'M4A'];
 export const TEST_AUDIO_FILES = {
   mp3: path.resolve(
     process.cwd(),
-    'input/indicvoices_data/audio',
+    'input/indicvoices_data/audio/Long_Medical_files',
     'Mania (Bipolar Disorder) _ Mental State Examination (MSE) _ OSCE Guide _  SCA Case _ UKMLA _ CPSA - (320 Kbps).mp3'
   ),
   mp4: path.resolve(
