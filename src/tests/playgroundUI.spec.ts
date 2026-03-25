@@ -531,7 +531,7 @@ test.describe('Playground — Credits: Positive Tests', () => {
   });
 
   test('with positive credits, Run Analysis should produce transcription result', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Verify credits are positive
@@ -560,7 +560,7 @@ test.describe('Playground — Credits: Positive Tests', () => {
   });
 
   test('credits should decrease after a successful transcription', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000); // 2 min max — don't block other tests
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsTextBefore = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -602,7 +602,7 @@ test.describe('Playground — Credits: Zero & Negative Balance Tests', () => {
   });
 
   test('with $0.00 credits, Run Analysis should NOT produce transcription but show CTA', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsText = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -632,7 +632,7 @@ test.describe('Playground — Credits: Zero & Negative Balance Tests', () => {
   });
 
   test('with negative credits, should show "Add funds" CTA', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsText = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -656,7 +656,7 @@ test.describe('Playground — Credits: Zero & Negative Balance Tests', () => {
   });
 
   test('with $0 credits, transcription result area should not show transcript text', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsText = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -715,7 +715,7 @@ test.describe('Playground — Credits: Edge Cases', () => {
   });
 
   test('Credits should update in real-time after transcription (no stale cache)', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsTextBefore = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -788,7 +788,7 @@ test.describe('Playground — Credits: Edge Cases', () => {
   });
 
   test('multiple rapid Run Analysis clicks should not double-deduct credits', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsTextBefore = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -871,7 +871,7 @@ test.describe('Playground — Credits: Negative Tests', () => {
   });
 
   test('with zero credits, JSON tab should not show transcription data', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsText = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -899,7 +899,7 @@ test.describe('Playground — Credits: Negative Tests', () => {
   });
 
   test('credits deduction should not happen for failed/errored transcriptions', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsTextBefore = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -1304,7 +1304,7 @@ test.describe('Playground — Tab Navigation: Edge Cases', () => {
   });
 
   test('uploaded file state should NOT persist when switching STT → TTS → STT', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Upload a file in STT
@@ -1689,7 +1689,7 @@ test.describe('Playground — Model Selection: Model-Specific Behavior', () => {
   });
 
   test('changing model should not clear uploaded file', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Upload a file first
@@ -1741,7 +1741,7 @@ test.describe('Playground — Model Selection: Model-Specific Behavior', () => {
   });
 
   test('Run Analysis should work with each model (basic transcription)', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Upload audio
@@ -2324,7 +2324,7 @@ test.describe('Playground — Language Selection: Edge Cases', () => {
   });
 
   test('language selection should not affect uploaded file', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Upload file
@@ -3136,7 +3136,7 @@ test.describe('Playground — File Upload', () => {
   });
 
   test('should upload WAV file via file input', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     expect(fs.existsSync(TEST_AUDIO_FILES.wav), 'WAV file should exist').toBe(true);
@@ -3154,7 +3154,7 @@ test.describe('Playground — File Upload', () => {
   });
 
   test('should trigger transcription via Run Analysis button after upload', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Upload file
@@ -3194,7 +3194,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
   });
 
   test('after uploading WAV, filename should appear on page', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3207,7 +3207,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
   });
 
   test('after uploading MP3, filename should appear on page', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3221,7 +3221,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
   });
 
   test('after uploading, file size should be displayed', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3235,7 +3235,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
   });
 
   test('after uploading, Replace File button should appear', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3248,7 +3248,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
   });
 
   test('after uploading, "Uploaded" status should appear', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3261,7 +3261,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
   });
 
   test('Run Analysis with uploaded file should show transcription in Transcript tab', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3292,7 +3292,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
   });
 
   test('Run Analysis with uploaded file should show data in JSON tab', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3312,7 +3312,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
   });
 
   test('uploading a file should not change Credits', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsBefore = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -3332,7 +3332,7 @@ test.describe('Playground — File Upload: Additional Positive Tests', () => {
 test.describe('Playground — File Upload: Edge Cases', () => {
 
   test('replacing an uploaded file with a new one should update the filename', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3352,7 +3352,7 @@ test.describe('Playground — File Upload: Edge Cases', () => {
   });
 
   test('uploading a large MP3 file (28 MB) should not crash the page', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     expect(fs.existsSync(TEST_AUDIO_FILES.mp3), 'Large MP3 should exist').toBe(true);
@@ -3370,7 +3370,7 @@ test.describe('Playground — File Upload: Edge Cases', () => {
   });
 
   test('uploading file should not affect model selection', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Set model to Zero Med
@@ -3390,7 +3390,7 @@ test.describe('Playground — File Upload: Edge Cases', () => {
   });
 
   test('uploading file should not affect language selection', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Language should be English before and after upload
@@ -3404,7 +3404,7 @@ test.describe('Playground — File Upload: Edge Cases', () => {
   });
 
   test('uploading file should not affect feature toggle states', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Toggle some features
@@ -3424,7 +3424,7 @@ test.describe('Playground — File Upload: Edge Cases', () => {
   });
 
   test('rapid file upload (upload → replace → upload) should not crash', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const fileInput = page.locator('input[type="file"]');
@@ -3440,7 +3440,7 @@ test.describe('Playground — File Upload: Edge Cases', () => {
   });
 
   test('page should handle MPEG audio file upload', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     expect(fs.existsSync(TEST_AUDIO_FILES.mp4), 'MPEG file should exist').toBe(true);
@@ -3486,7 +3486,7 @@ test.describe('Playground — File Upload: Negative Tests', () => {
   });
 
   test('uploading should not trigger any API calls (only Run Analysis should)', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     const apiCalls: string[] = [];
     page.on('request', req => {
       if (req.url().includes('/v1/audio/transcriptions')) apiCalls.push(req.url());
@@ -3503,7 +3503,7 @@ test.describe('Playground — File Upload: Negative Tests', () => {
   });
 
   test('uploading should not cause JavaScript console errors', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     const errors: string[] = [];
     page.on('console', msg => {
       if (msg.type() === 'error') errors.push(msg.text());
@@ -3521,7 +3521,7 @@ test.describe('Playground — File Upload: Negative Tests', () => {
   });
 
   test('upload area should not accept non-audio files gracefully', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Try uploading a non-audio file (the .env file as an example)
@@ -3565,7 +3565,7 @@ test.describe('Playground — File Upload: Negative Tests', () => {
   });
 
   test('double-clicking Run Analysis should not send duplicate API requests', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     let apiCallCount = 0;
     page.on('request', req => {
       if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') apiCallCount++;
@@ -3592,7 +3592,7 @@ test.describe('Playground — File Upload: Negative Tests', () => {
 
 test.describe('Playground — Sample Audio', () => {
   test('should load Customer Support Call sample', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     await page.getByText('Customer Support Call').click();
@@ -3604,7 +3604,7 @@ test.describe('Playground — Sample Audio', () => {
   });
 
   test('should load Podcast sample', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     await page.getByText('Podcast').first().click();
@@ -3646,7 +3646,7 @@ test.describe('Playground — Sample Audio: Additional Positive Tests', () => {
   });
 
   test('clicking Customer Support Call should prepare audio for analysis', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     await page.getByText('Customer Support Call').click();
@@ -3657,7 +3657,7 @@ test.describe('Playground — Sample Audio: Additional Positive Tests', () => {
   });
 
   test('clicking Podcast should prepare audio for analysis', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     await page.getByText('Podcast').first().click();
@@ -3667,7 +3667,7 @@ test.describe('Playground — Sample Audio: Additional Positive Tests', () => {
   });
 
   test('selecting a sample should not change Credits', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     const creditsBefore = await page.getByText(/Credits:\s*\$/).textContent() || '';
@@ -3681,7 +3681,7 @@ test.describe('Playground — Sample Audio: Additional Positive Tests', () => {
   });
 
   test('selecting sample then Run Analysis should produce transcription', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     await page.getByText('Customer Support Call').click();
@@ -3716,7 +3716,7 @@ test.describe('Playground — Sample Audio: Additional Positive Tests', () => {
 test.describe('Playground — Sample Audio: Edge Cases', () => {
 
   test('switching between samples should update the loaded audio', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Load first sample
@@ -3733,7 +3733,7 @@ test.describe('Playground — Sample Audio: Edge Cases', () => {
   });
 
   test('clicking the same sample twice should not break anything', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     await page.getByText('Customer Support Call').click();
@@ -3748,7 +3748,7 @@ test.describe('Playground — Sample Audio: Edge Cases', () => {
   });
 
   test('selecting sample after uploading a file should replace the uploaded file', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Upload a file first
@@ -3766,7 +3766,7 @@ test.describe('Playground — Sample Audio: Edge Cases', () => {
   });
 
   test('sample selection should not affect model or language', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Set model and note language
@@ -3787,7 +3787,7 @@ test.describe('Playground — Sample Audio: Edge Cases', () => {
   });
 
   test('sample selection should not affect feature toggle states', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     // Toggle some features
@@ -3804,7 +3804,7 @@ test.describe('Playground — Sample Audio: Edge Cases', () => {
   });
 
   test('rapid sample switching 5 times should not crash', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
 
     for (let i = 0; i < 5; i++) {
@@ -3822,7 +3822,7 @@ test.describe('Playground — Sample Audio: Edge Cases', () => {
 test.describe('Playground — Sample Audio: Negative Tests', () => {
 
   test('selecting a sample should not trigger API calls (only Run Analysis should)', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     const apiCalls: string[] = [];
     page.on('request', req => {
       if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') apiCalls.push(req.url());
@@ -3838,7 +3838,7 @@ test.describe('Playground — Sample Audio: Negative Tests', () => {
   });
 
   test('selecting a sample should not cause JavaScript console errors', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     const errors: string[] = [];
     page.on('console', msg => {
       if (msg.type() === 'error') errors.push(msg.text());
@@ -3856,7 +3856,7 @@ test.describe('Playground — Sample Audio: Negative Tests', () => {
   });
 
   test('selecting a sample should not cause failed network requests', async ({ page }) => {
-    test.setTimeout(PLAYGROUND_TIMEOUTS.transcription);
+    test.setTimeout(120000);
     const failedRequests: string[] = [];
     page.on('response', res => {
       if (res.status() >= 400) failedRequests.push(`${res.status()} ${res.url()}`);

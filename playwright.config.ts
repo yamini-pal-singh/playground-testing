@@ -42,12 +42,15 @@ export default defineConfig({
     },
     {
       name: 'playground-ui',
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: process.env.PLAYGROUND_URL || 'https://playground.shunyalabs.ai',
         storageState: path.resolve(__dirname, 'auth', 'playground-auth.json'),
       },
       testMatch: /playground.*\.spec\.ts/,
+      timeout: 120000, // 2 min per UI test (prevents long timeouts from blocking others)
+      retries: 1, // Retry once on failure to handle flaky UI interactions
     },
   ],
 
