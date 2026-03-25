@@ -77,6 +77,8 @@ function resolveAudioPath(row: TestDataRow): string {
     path.resolve(INPUT_DIR, 'indicvoices_data', 'audio', row.lang, basename),
     // Try in Indic subfolder (Hindi_0.wav etc.)
     path.resolve(INPUT_DIR, 'indicvoices_data', 'audio', 'Indic', basename),
+    // Try in Long_Medical_files subfolder (english OSCE/medical audio)
+    path.resolve(INPUT_DIR, 'indicvoices_data', 'audio', 'Long_Medical_files', basename),
     // Try flat in audio dir
     path.resolve(INPUT_DIR, 'indicvoices_data', 'audio', basename),
     // Try in CodeSwitch
