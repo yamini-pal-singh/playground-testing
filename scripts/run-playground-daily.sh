@@ -208,10 +208,18 @@ if npx ts-node scripts/generate-playground-report.ts >> "$LOG_FILE" 2>&1; then
   # Push dashboard to GitHub Pages for stakeholder access
   GHPAGES_REPO="$HOME/repos/asr-testing"
   if [ -d "$GHPAGES_REPO/.git" ]; then
+    mkdir -p "$GHPAGES_REPO/asr-testing/reports/playground-history"
+    # Always update latest dashboard
     cp "$REPORTS_DIR/Playground-Report.html" "$GHPAGES_REPO/asr-testing/reports/Playground-Report.html" 2>/dev/null
-    (cd "$GHPAGES_REPO" && git add asr-testing/reports/Playground-Report.html && git commit -m "Update Playground Dashboard — $DATE" && git push origin main) >> "$LOG_FILE" 2>&1
+    # Save dated copy with logs for history
+    cp "$REPORTS_DIR/Playground-Report.html" "$GHPAGES_REPO/asr-testing/reports/playground-history/Playground-Report-$DATE.html" 2>/dev/null
+    # Copy daily log file for reference
+    cp "$LOG_FILE" "$GHPAGES_REPO/asr-testing/reports/playground-history/playground-daily-$DATE.log" 2>/dev/null
+    # Copy summary JSON
+    cp "$SUMMARY_JSON" "$GHPAGES_REPO/asr-testing/reports/playground-history/playground-summary-$DATE.json" 2>/dev/null
+    (cd "$GHPAGES_REPO" && git add asr-testing/reports/ && git commit -m "Playground Dashboard + logs — $DATE" && git push origin main) >> "$LOG_FILE" 2>&1
     if [ $? -eq 0 ]; then
-      echo "   ✅ Dashboard published to GitHub Pages" | tee -a "$LOG_FILE"
+      echo "   ✅ Dashboard + logs published to GitHub Pages" | tee -a "$LOG_FILE"
     else
       echo "   ⚠️  GitHub Pages push failed (may need auth)" | tee -a "$LOG_FILE"
     fi
