@@ -28,9 +28,10 @@ echo "── Running UI Tests ────────────────�
 npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui 2>&1 | tee "$LOG_DIR/playground-email-$DATE.log"
 
 # Count results from log
-PASSED=$(grep -c "✓" "$LOG_DIR/playground-email-$DATE.log" 2>/dev/null || echo 0)
-FAILED=$(grep -c "✘" "$LOG_DIR/playground-email-$DATE.log" 2>/dev/null || echo 0)
-# Deduplicate retries (each retry shows ✘ twice)
+PASSED=$(grep -c "✓" "$LOG_DIR/playground-email-$DATE.log" 2>/dev/null || true)
+PASSED=${PASSED:-0}
+FAILED=$(grep -c "✘" "$LOG_DIR/playground-email-$DATE.log" 2>/dev/null || true)
+FAILED=${FAILED:-0}
 FAILED_UNIQUE=$((FAILED / 2))
 TOTAL=$((PASSED + FAILED_UNIQUE))
 
