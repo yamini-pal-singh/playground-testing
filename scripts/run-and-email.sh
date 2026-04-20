@@ -40,15 +40,10 @@ npx ts-node scripts/generate-playground-report.ts 2>&1
 
 echo ""
 echo "── Publishing Dashboard ─────────────────────────"
-GHPAGES_REPO="$HOME/repos/asr-testing"
-if [ -d "$GHPAGES_REPO/.git" ]; then
-  mkdir -p "$GHPAGES_REPO/asr-testing/reports/playground-history"
-  cp "$REPORTS_DIR/Playground-Report.html" "$GHPAGES_REPO/asr-testing/reports/Playground-Report.html"
-  cp "$REPORTS_DIR/Playground-Report.html" "$GHPAGES_REPO/asr-testing/reports/playground-history/Playground-Report-$DATE.html"
-  cp "$LOG_DIR/playground-email-$DATE.log" "$GHPAGES_REPO/asr-testing/reports/playground-history/playground-daily-$DATE.log" 2>/dev/null || true
-  (cd "$GHPAGES_REPO" && git add asr-testing/reports/ && git commit -m "Playground Dashboard — $DATE" && git push origin main) 2>&1
-  echo "   ✅ Dashboard published"
-fi
+git add reports/Playground-Report.html 2>/dev/null
+git commit -m "Dashboard update — $DATE $(date '+%H:%M')" 2>/dev/null
+git push origin main 2>&1
+echo "   ✅ Dashboard published"
 
 echo ""
 if [ "$FAILED_UNIQUE" -gt 0 ]; then
