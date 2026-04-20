@@ -177,7 +177,6 @@ function buildAllTestCases(): TestCase[] {
   add(UI, 'Page Load & Layout', 'should display all three service tabs', FUI, 'P0');
   add(UI, 'Page Load & Layout', 'should display Configuration section with labels', FUI, 'P0');
   add(UI, 'Page Load & Layout', 'should display Upload Audio section', FUI, 'P0');
-  add(UI, 'Page Load & Layout', 'should display sample audio options', FUI, 'P0');
   add(UI, 'Page Load & Layout', 'should display Features and Code Sample tabs', FUI, 'P0');
   add(UI, 'Page Load & Layout', 'should display Transcript and JSON output tabs', FUI, 'P0');
   add(UI, 'Page Load & Layout', 'should display Run Analysis button', FUI, 'P0');
@@ -206,9 +205,6 @@ function buildAllTestCases(): TestCase[] {
   add(UI, 'Page Load: Additional + Edge Cases', 'supported formats text should mention MP3, WAV, FLAC, M4A', FUI, 'P1');
   add(UI, 'Page Load: Additional + Edge Cases', 'no file should be pre-selected on page load', FUI, 'P1');
   add(UI, 'Page Load: Additional + Edge Cases', 'file input should accept audio MIME types', FUI, 'P1');
-  add(UI, 'Page Load: Additional + Edge Cases', 'Customer Support Call should have a description', FUI, 'P1');
-  add(UI, 'Page Load: Additional + Edge Cases', 'Podcast should have a description', FUI, 'P1');
-  add(UI, 'Page Load: Additional + Edge Cases', 'sample audio cards should be clickable', FUI, 'P1');
   add(UI, 'Page Load: Additional + Edge Cases', 'Features tab should show Audio Intelligence heading', FUI, 'P1');
   add(UI, 'Page Load: Additional + Edge Cases', 'Features tab should show Intelligence Features heading', FUI, 'P1');
   add(UI, 'Page Load: Additional + Edge Cases', 'all 12 feature toggles should be present', FUI, 'P1');
@@ -571,105 +567,66 @@ function buildAllTestCases(): TestCase[] {
   add(UI, 'File Upload: Negative Tests', 'double-clicking Run Analysis should not send duplicate API requests', FUI, 'P3');
 
   // ══════════════════════════════════════════════════════════════════════════
-  // PLAYGROUND UI — Sample Audio (2 tests, P0)
+  // PLAYGROUND UI — Sample Audio Removal: Positive Tests (5 tests, P1)
   // ══════════════════════════════════════════════════════════════════════════
 
-  add(UI, 'Sample Audio', 'should load Customer Support Call sample', FUI, 'P0');
-  add(UI, 'Sample Audio', 'should load Podcast sample', FUI, 'P0');
+  add(UI, 'Sample Audio Removal: Positive Tests', 'upload section should show only file upload without sample options', FUI, 'P1');
+  add(UI, 'Sample Audio Removal: Positive Tests', 'upload section should display supported format information', FUI, 'P1');
+  add(UI, 'Sample Audio Removal: Positive Tests', 'upload description text should be visible', FUI, 'P1');
+  add(UI, 'Sample Audio Removal: Positive Tests', 'file upload should be the only way to provide audio input', FUI, 'P1');
+  add(UI, 'Sample Audio Removal: Positive Tests', 'Run Analysis button should be visible without sample audio', FUI, 'P1');
 
   // ══════════════════════════════════════════════════════════════════════════
-  // PLAYGROUND UI — Sample Audio: Additional (9 tests, P1)
+  // PLAYGROUND UI — Sample Audio Removal: Negative Tests (5 tests, P2)
   // ══════════════════════════════════════════════════════════════════════════
 
-  add(UI, 'Sample Audio: Additional', '"or try a sample" text should be visible', FUI, 'P1');
-  add(UI, 'Sample Audio: Additional', 'Customer Support Call card should have title and description', FUI, 'P1');
-  add(UI, 'Sample Audio: Additional', 'Podcast card should have title and description', FUI, 'P1');
-  add(UI, 'Sample Audio: Additional', 'exactly 2 sample audio options should be present', FUI, 'P1');
-  add(UI, 'Sample Audio: Additional', 'clicking Customer Support Call should prepare audio for analysis', FUI, 'P1');
-  add(UI, 'Sample Audio: Additional', 'clicking Podcast should prepare audio for analysis', FUI, 'P1');
-  add(UI, 'Sample Audio: Additional', 'selecting a sample should not change Credits', FUI, 'P1');
-  add(UI, 'Sample Audio: Additional', 'selecting sample then Run Analysis should produce transcription', FUI, 'P1');
-  add(UI, 'Sample Audio: Additional', 'sample cards should be clickable/interactive', FUI, 'P1');
+  add(UI, 'Sample Audio Removal: Negative Tests', 'no sample audio cards should exist in STT tab', FUI, 'P2');
+  add(UI, 'Sample Audio Removal: Negative Tests', 'no sample audio cards should exist in TTS tab', FUI, 'P2');
+  add(UI, 'Sample Audio Removal: Negative Tests', 'no sample audio cards should exist in Voice Agent tab', FUI, 'P2');
+  add(UI, 'Sample Audio Removal: Negative Tests', 'page should not contain any orphaned sample audio references', FUI, 'P2');
+  add(UI, 'Sample Audio Removal: Negative Tests', 'no JavaScript errors should occur where sample audio was removed', FUI, 'P2');
 
   // ══════════════════════════════════════════════════════════════════════════
-  // PLAYGROUND UI — Sample Audio: Edge Cases (6 tests, P2)
+  // PLAYGROUND UI — Sample Audio Removal: Edge Cases (4 tests, P2)
   // ══════════════════════════════════════════════════════════════════════════
 
-  add(UI, 'Sample Audio: Edge Cases', 'switching between samples should update the loaded audio', FUI, 'P2');
-  add(UI, 'Sample Audio: Edge Cases', 'clicking the same sample twice should not break anything', FUI, 'P2');
-  add(UI, 'Sample Audio: Edge Cases', 'selecting sample after uploading a file should replace the uploaded file', FUI, 'P2');
-  add(UI, 'Sample Audio: Edge Cases', 'sample selection should not affect model or language', FUI, 'P2');
-  add(UI, 'Sample Audio: Edge Cases', 'sample selection should not affect feature toggle states', FUI, 'P2');
-  add(UI, 'Sample Audio: Edge Cases', 'rapid sample switching 5 times should not crash', FUI, 'P2');
+  add(UI, 'Sample Audio Removal: Edge Cases', 'uploading a file should work without sample audio fallback', FUI, 'P2');
+  add(UI, 'Sample Audio Removal: Edge Cases', 'page layout should be intact without sample audio section', FUI, 'P2');
+  add(UI, 'Sample Audio Removal: Edge Cases', 'switching tabs should not reveal hidden sample audio elements', FUI, 'P2');
+  add(UI, 'Sample Audio Removal: Edge Cases', 'refreshing page should not bring back sample audio section', FUI, 'P2');
 
   // ══════════════════════════════════════════════════════════════════════════
-  // PLAYGROUND UI — Sample Audio: Negative Tests (7 tests, P3)
+  // PLAYGROUND UI — Language Dropdown: Positive Tests (7 tests, P1)
   // ══════════════════════════════════════════════════════════════════════════
 
-  add(UI, 'Sample Audio: Negative Tests', 'selecting a sample should not trigger API calls (only Run Analysis should)', FUI, 'P3');
-  add(UI, 'Sample Audio: Negative Tests', 'selecting a sample should not cause JavaScript console errors', FUI, 'P3');
-  add(UI, 'Sample Audio: Negative Tests', 'selecting a sample should not cause failed network requests', FUI, 'P3');
-  add(UI, 'Sample Audio: Negative Tests', 'sample cards should not show HTML/template code', FUI, 'P3');
-  add(UI, 'Sample Audio: Negative Tests', 'sample audio should not be available in TTS tab', FUI, 'P3');
-  add(UI, 'Sample Audio: Negative Tests', 'sample audio should not be available in Voice Agent tab', FUI, 'P3');
-  add(UI, 'Sample Audio: Negative Tests', 'sample card descriptions should not be empty', FUI, 'P3');
+  add(UI, 'Language Dropdown: Positive Tests', 'language dropdown should open when clicking English button', FUI, 'P1');
+  add(UI, 'Language Dropdown: Positive Tests', 'language dropdown should show Indic languages', FUI, 'P1');
+  add(UI, 'Language Dropdown: Positive Tests', 'language dropdown should show global languages', FUI, 'P1');
+  add(UI, 'Language Dropdown: Positive Tests', 'language dropdown should show African languages', FUI, 'P1');
+  add(UI, 'Language Dropdown: Positive Tests', 'language dropdown should show Southeast Asian languages', FUI, 'P1');
+  add(UI, 'Language Dropdown: Positive Tests', 'selecting a language should update the language button text', FUI, 'P1');
+  add(UI, 'Language Dropdown: Positive Tests', 'language dropdown should display flag emojis with language names', FUI, 'P1');
 
   // ══════════════════════════════════════════════════════════════════════════
-  // BACKEND API — Speech to Text API (13 tests, P0)
+  // PLAYGROUND UI — Language Dropdown: Negative Tests (5 tests, P2)
   // ══════════════════════════════════════════════════════════════════════════
 
-  const API = 'Backend API';
-  const APIT = 'API';
-
-  // Zero Indic Model
-  add(API, 'Speech to Text API: Zero Indic Model', 'should transcribe audio with zero-indic model', APIT, 'P0');
-  add(API, 'Speech to Text API: Zero Indic Model', 'should return detected language for zero-indic', APIT, 'P0');
-  // Zero Codeswitch Model
-  add(API, 'Speech to Text API: Zero Codeswitch Model', 'should transcribe Hinglish audio with zero-codeswitch model', APIT, 'P0');
-  // Zero MedASR Model
-  add(API, 'Speech to Text API: Zero MedASR Model', 'should transcribe audio with zero-medasr model', APIT, 'P0');
-  // Error Handling
-  add(API, 'Error Handling', 'should return 401 for invalid API key', APIT, 'P0');
-  add(API, 'Error Handling', 'should return error for missing file', APIT, 'P0');
-  add(API, 'Error Handling', 'should return error for missing model parameter', APIT, 'P0');
-  add(API, 'Error Handling', 'should return error for unsupported model name', APIT, 'P0');
-  add(API, 'Error Handling', 'should handle request without Authorization header', APIT, 'P0');
-  // Response Validation
-  add(API, 'Response Validation', 'should return valid JSON response structure', APIT, 'P0');
-  add(API, 'Response Validation', 'should return non-empty transcript for valid audio', APIT, 'P0');
-  // Multi-format Support
-  add(API, 'Multi-format Support', 'should transcribe WAV file', APIT, 'P0');
-  add(API, 'Multi-format Support', 'should transcribe MP3 file', APIT, 'P0');
-  add(API, 'Multi-format Support', 'should transcribe MPEG file', APIT, 'P0');
+  add(UI, 'Language Dropdown: Negative Tests', 'language dropdown should not have empty or blank entries', FUI, 'P2');
+  add(UI, 'Language Dropdown: Negative Tests', 'language dropdown should not show duplicate language entries', FUI, 'P2');
+  add(UI, 'Language Dropdown: Negative Tests', 'selecting a language should not trigger API calls', FUI, 'P2');
+  add(UI, 'Language Dropdown: Negative Tests', 'language dropdown should not cause console errors', FUI, 'P2');
+  add(UI, 'Language Dropdown: Negative Tests', 'language selection should not affect Credits balance', FUI, 'P2');
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ZERO INDIC FEATURES (12 tests, P0)
+  // PLAYGROUND UI — Language Dropdown: Edge Cases (6 tests, P2)
   // ══════════════════════════════════════════════════════════════════════════
 
-  const ZI = 'Zero Indic Features';
-  const INT = 'Integration';
-
-  add(ZI, '1. Baseline Transcription', 'Transcribe all audio files with Zero Indic model', INT, 'P0');
-  add(ZI, '2. Translation', 'Transcribe + translate all audio files to English', INT, 'P0');
-  add(ZI, '3. Transliteration', 'Transcribe + transliterate all audio files to Latin script', INT, 'P0');
-  add(ZI, '4. Speaker Diarization', 'Transcribe + diarize all audio files', INT, 'P0');
-  add(ZI, '5. Word Timestamps', 'Transcribe + word timestamps for all audio files', INT, 'P0');
-  add(ZI, '6. Profanity Hashing', 'Transcribe + profanity hashing for all audio files', INT, 'P0');
-  add(ZI, '7. Custom Keyword Hashing', 'Transcribe + custom keyword hashing for all audio files', INT, 'P0');
-  add(ZI, '8. Intent Detection', 'Transcribe + detect intent for all audio files', INT, 'P0');
-  add(ZI, '9. Sentiment Analysis', 'Transcribe + sentiment analysis for all audio files', INT, 'P0');
-  add(ZI, '10. Emotion Diarization', 'Transcribe + emotion diarization for all audio files', INT, 'P0');
-  add(ZI, '11. Summarisation', 'Transcribe + summarise all audio files', INT, 'P0');
-  add(ZI, '12. Keyword Normalisation', 'Transcribe + keyword normalisation for all audio files', INT, 'P0');
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // HEALTH CHECK (2 tests, P0)
-  // ══════════════════════════════════════════════════════════════════════════
-
-  const HC = 'Health Check';
-
-  add(HC, 'API Health Check', 'should return ok status', APIT, 'P0');
-  add(HC, 'API Health Check', 'should report Triton service readiness', APIT, 'P0');
+  add(UI, 'Language Dropdown: Edge Cases', 'rapidly opening and closing language dropdown should not crash', FUI, 'P2');
+  add(UI, 'Language Dropdown: Edge Cases', 'switching language then switching tabs should preserve selection', FUI, 'P2');
+  add(UI, 'Language Dropdown: Edge Cases', 'language selection should not affect model dropdown', FUI, 'P2');
+  add(UI, 'Language Dropdown: Edge Cases', 'selecting non-Indic language should keep page functional', FUI, 'P2');
+  add(UI, 'Language Dropdown: Edge Cases', 'language dropdown should close when clicking outside', FUI, 'P2');
+  add(UI, 'Language Dropdown: Edge Cases', 'scrolling through large language list should be smooth', FUI, 'P2');
 
   return tests;
 }

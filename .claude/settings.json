@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/unitedwecare/Playground_repo/playground-testing/test-results -name \"error-context.md\" -exec grep -l \"Sample\\\\|sample\\\\|Customer Support\\\\|Podcast\" {} \\\\;)",
+      "Bash(npx tsx *)",
+      "Bash(NODE_PATH=/Users/unitedwecare/Playground_repo/playground-testing/node_modules npx tsx /tmp/playground-inspection/inspect.ts)",
+      "Bash(NODE_PATH=/Users/unitedwecare/Playground_repo/playground-testing/node_modules npx tsx /tmp/playground-inspection/inspect-tabs.ts)",
+      "Bash(ls -lt reports/playground-summary-*.json)",
+      "Bash(open reports/Playground-Report.html)",
+      "Bash(node -e ' *)",
+      "Bash(ls -lt logs/playground-daily-*.log)",
+      "Bash(grep -E \"^\\\\[|▶|❌ FAIL$|✅ PASS$\" logs/playground-daily-2026-04-17.log)",
+      "Bash(grep -E \"▶|❌ FAIL$|✅ PASS$\" logs/playground-daily-2026-04-17.log)",
+      "Bash(ls -lt logs/playground-email-*.log)",
+      "Bash(grep -E \"▶|❌ FAIL$|✅ PASS$\" logs/playground-daily-2026-04-19.log)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

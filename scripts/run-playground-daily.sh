@@ -117,45 +117,10 @@ run_test "Functional UI"  "Model Selection"             "npx playwright test src
 run_test "Functional UI"  "Language Selection"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Language Selection'"
 run_test "Functional UI"  "Audio Intelligence Features" "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Audio Intelligence'"
 run_test "Functional UI"  "File Upload"                 "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'File Upload'"
-run_test "Functional UI"  "Sample Audio"                "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Sample Audio'"
+run_test "Functional UI"  "Sample Audio Removal"        "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Sample Audio Removal'"
+run_test "Functional UI"  "Language Dropdown"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Language Dropdown'"
 
-# ════════════════════════════════════════════════════════════════
-# SECTION 2: HEALTH CHECK
-# ════════════════════════════════════════════════════════════════
-echo "" | tee -a "$LOG_FILE"
-echo "── Health Check ──────────────────────────────────" | tee -a "$LOG_FILE"
-
-run_test "Health Check"  "API Health & Services"  "npx playwright test src/tests/health.spec.ts --reporter=list --project=api-tests"
-
-# ════════════════════════════════════════════════════════════════
-# SECTION 3: BACKEND API TESTS
-# ════════════════════════════════════════════════════════════════
-echo "" | tee -a "$LOG_FILE"
-echo "── Backend API Tests ───────────────────────────────" | tee -a "$LOG_FILE"
-
-run_test "Backend API"  "STT Models (Indic/Med/Codeswitch)"  "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Speech to Text'"
-run_test "Backend API"  "Error Handling"                      "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Error Handling'"
-run_test "Backend API"  "Response Validation"                 "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Response Validation'"
-run_test "Backend API"  "Multi-format Support"                "npx playwright test src/tests/playgroundBackend.spec.ts --reporter=list --project=api-tests -g 'Multi-format'"
-
-# ════════════════════════════════════════════════════════════════
-# SECTION 4: ZERO INDIC FEATURE TESTS
-# ════════════════════════════════════════════════════════════════
-echo "" | tee -a "$LOG_FILE"
-echo "── Zero Indic Backend Features ─────────────────────" | tee -a "$LOG_FILE"
-
-run_test "Zero Indic Features"  "Baseline Transcription"   "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Baseline'"
-run_test "Zero Indic Features"  "Translation"              "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Translation'"
-run_test "Zero Indic Features"  "Transliteration"          "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Transliteration'"
-run_test "Zero Indic Features"  "Speaker Diarization"      "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Speaker Diarization'"
-run_test "Zero Indic Features"  "Word Timestamps"          "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Word Timestamps'"
-run_test "Zero Indic Features"  "Profanity Hashing"        "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Profanity Hashing'"
-run_test "Zero Indic Features"  "Custom Keyword Hashing"   "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Custom Keyword'"
-run_test "Zero Indic Features"  "Intent Detection"         "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Intent Detection'"
-run_test "Zero Indic Features"  "Sentiment Analysis"       "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Sentiment Analysis'"
-run_test "Zero Indic Features"  "Emotion Diarization"      "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Emotion Diarization'"
-run_test "Zero Indic Features"  "Summarisation"            "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Summarisation'"
-run_test "Zero Indic Features"  "Keyword Normalisation"    "npx playwright test src/tests/playgroundZeroIndic.spec.ts --reporter=list --project=api-tests -g 'Keyword Normalisation'"
+# Sections 2-4 (Health Check, Backend API, Zero Indic) removed — only UI tests are active
 
 # ════════════════════════════════════════════════════════════════
 # WRITE DAILY SUMMARY JSON

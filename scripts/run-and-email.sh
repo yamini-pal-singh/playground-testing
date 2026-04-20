@@ -51,10 +51,14 @@ if [ -d "$GHPAGES_REPO/.git" ]; then
 fi
 
 echo ""
-echo "── Sending Email to Stakeholders ────────────────"
-npx ts-node scripts/send-playground-email.ts 2>&1
+if [ "$FAILED_UNIQUE" -gt 0 ]; then
+  echo "── ❌ $FAILED_UNIQUE test(s) failed — Sending Email ──"
+  npx ts-node scripts/send-playground-email.ts 2>&1
+else
+  echo "── ✅ All $PASSED tests passed — No email needed ──"
+fi
 
 echo ""
 echo "════════════════════════════════════════════════════"
-echo "  Done — $(date '+%H:%M:%S')"
+echo "  Done — $(date '+%H:%M:%S') | Passed: $PASSED | Failed: $FAILED_UNIQUE"
 echo "════════════════════════════════════════════════════"
