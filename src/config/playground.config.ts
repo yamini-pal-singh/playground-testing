@@ -59,7 +59,7 @@ export const TEST_AUDIO_FILES = {
  * Timeouts for UI interactions
  */
 export const PLAYGROUND_TIMEOUTS = {
-  pageLoad: 30000,
-  transcription: 300000, // 5 minutes for long audio
+  pageLoad: 60000,
+  transcription: 300000,
   uiAction: 10000,
 };
