@@ -17,7 +17,8 @@
       "Bash(gh repo *)",
       "Bash(gh api *)",
       "Bash(bash scripts/run-and-email.sh)",
-      "Bash(tee /tmp/hourly-run-test.log)"
+      "Bash(tee /tmp/hourly-run-test.log)",
+      "Bash(ls reports/playground-summary-*.json)"
     ],
     "additionalDirectories": [
       "/tmp"
