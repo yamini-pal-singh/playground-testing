@@ -12,7 +12,12 @@
       "Bash(grep -E \"^\\\\[|▶|❌ FAIL$|✅ PASS$\" logs/playground-daily-2026-04-17.log)",
       "Bash(grep -E \"▶|❌ FAIL$|✅ PASS$\" logs/playground-daily-2026-04-17.log)",
       "Bash(ls -lt logs/playground-email-*.log)",
-      "Bash(grep -E \"▶|❌ FAIL$|✅ PASS$\" logs/playground-daily-2026-04-19.log)"
+      "Bash(grep -E \"▶|❌ FAIL$|✅ PASS$\" logs/playground-daily-2026-04-19.log)",
+      "Bash(git -C ~/repos/asr-testing branch -a)",
+      "Bash(gh repo *)",
+      "Bash(gh api *)",
+      "Bash(bash scripts/run-and-email.sh)",
+      "Bash(tee /tmp/hourly-run-test.log)"
     ],
     "additionalDirectories": [
       "/tmp"
