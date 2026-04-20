@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-shot: Run UI tests, generate report, push dashboard, send email to all stakeholders
+# Hourly: Run UI test suites, generate summary + report, push dashboard, email on failure
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,7 +12,7 @@ REPORTS_DIR="$PROJECT_DIR/reports"
 mkdir -p "$LOG_DIR" "$REPORTS_DIR"
 
 echo "════════════════════════════════════════════════════"
-echo "  Playground Test + Email — $(date '+%Y-%m-%d %H:%M:%S')"
+echo "  Playground Hourly Run — $(date '+%Y-%m-%d %H:%M:%S')"
 echo "════════════════════════════════════════════════════"
 
 # Load node
@@ -23,22 +23,29 @@ if [ -f "$HOME/.nvm/nvm.sh" ]; then
 fi
 export PATH="/usr/local/bin:$HOME/.nvm/versions/node/$(ls "$HOME/.nvm/versions/node" 2>/dev/null | sort -V | tail -1)/bin:$PATH"
 
+# ── Step 1: Run daily suite script (generates summary JSON) ──
 echo ""
-echo "── Running UI Tests ─────────────────────────────"
-npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui 2>&1 | tee "$LOG_DIR/playground-email-$DATE.log"
+echo "── Running UI Test Suites ─────────────────────────"
+bash "$SCRIPT_DIR/run-playground-daily.sh" 2>&1 | tee "$LOG_DIR/playground-email-$DATE.log"
 
-# Count results from log
-PASSED=$(grep -c "✓" "$LOG_DIR/playground-email-$DATE.log" 2>/dev/null || true)
-PASSED=${PASSED:-0}
-FAILED=$(grep -c "✘" "$LOG_DIR/playground-email-$DATE.log" 2>/dev/null || true)
-FAILED=${FAILED:-0}
-FAILED_UNIQUE=$((FAILED / 2))
-TOTAL=$((PASSED + FAILED_UNIQUE))
+# ── Step 2: Read pass/fail from generated summary JSON ──
+SUMMARY_JSON="$REPORTS_DIR/playground-summary-$DATE.json"
+if [ -f "$SUMMARY_JSON" ]; then
+  SUITE_PASSED=$(python3 -c "import json; d=json.load(open('$SUMMARY_JSON')); print(d.get('passed',0))" 2>/dev/null || echo 0)
+  SUITE_FAILED=$(python3 -c "import json; d=json.load(open('$SUMMARY_JSON')); print(d.get('failed',0))" 2>/dev/null || echo 0)
+  SUITE_TOTAL=$(python3 -c "import json; d=json.load(open('$SUMMARY_JSON')); print(d.get('totalSuites',0))" 2>/dev/null || echo 0)
+else
+  SUITE_PASSED=0
+  SUITE_FAILED=0
+  SUITE_TOTAL=0
+fi
 
+# ── Step 3: Generate HTML report ──
 echo ""
 echo "── Generating Report ────────────────────────────"
 npx ts-node scripts/generate-playground-report.ts 2>&1
 
+# ── Step 4: Push dashboard to GitHub Pages ──
 echo ""
 echo "── Publishing Dashboard ─────────────────────────"
 git add reports/Playground-Report.html 2>/dev/null
@@ -46,15 +53,16 @@ git commit -m "Dashboard update — $DATE $(date '+%H:%M')" 2>/dev/null
 git push origin main 2>&1
 echo "   ✅ Dashboard published"
 
+# ── Step 5: Email only on failure ──
 echo ""
-if [ "$FAILED_UNIQUE" -gt 0 ]; then
-  echo "── ❌ $FAILED_UNIQUE test(s) failed — Sending Email ──"
+if [ "$SUITE_FAILED" -gt 0 ]; then
+  echo "── ❌ $SUITE_FAILED suite(s) failed — Sending Email ──"
   npx ts-node scripts/send-playground-email.ts 2>&1
 else
-  echo "── ✅ All $PASSED tests passed — No email needed ──"
+  echo "── ✅ All $SUITE_PASSED/$SUITE_TOTAL suites passed — No email needed ──"
 fi
 
 echo ""
 echo "════════════════════════════════════════════════════"
-echo "  Done — $(date '+%H:%M:%S') | Passed: $PASSED | Failed: $FAILED_UNIQUE"
+echo "  Done — $(date '+%H:%M:%S') | Suites: $SUITE_PASSED/$SUITE_TOTAL passed"
 echo "════════════════════════════════════════════════════"
