@@ -39,11 +39,12 @@ if [ -f "$HOME/.nvm/nvm.sh" ]; then
 fi
 export PATH="/usr/local/bin:$HOME/.nvm/versions/node/$(ls "$HOME/.nvm/versions/node" 2>/dev/null | sort -V | tail -1)/bin:$PATH"
 
-# ── Check auth freshness (cross-platform: stat -f on macOS, -c on Linux) ────
+# ── Check auth freshness (cross-platform using python3) ──────────────────────
 AUTH_FILE="$PROJECT_DIR/auth/playground-auth.json"
 if [ -f "$AUTH_FILE" ]; then
-  AUTH_MTIME=$(stat -f %m "$AUTH_FILE" 2>/dev/null || stat -c %Y "$AUTH_FILE" 2>/dev/null || echo 0)
-  AUTH_AGE_DAYS=$(( ( $(date +%s) - AUTH_MTIME ) / 86400 ))
+  AUTH_MTIME=$(python3 -c "import os; print(int(os.path.getmtime('$AUTH_FILE')))" 2>/dev/null || echo 0)
+  NOW=$(date +%s)
+  AUTH_AGE_DAYS=$(( (NOW - AUTH_MTIME) / 86400 ))
   if [ "$AUTH_AGE_DAYS" -ge 7 ]; then
     echo "  ⚠️  Auth state is ${AUTH_AGE_DAYS} days old — UI tests may fail." | tee -a "$LOG_FILE"
     echo "  💡 Run: npm run playground:login  to refresh" | tee -a "$LOG_FILE"
