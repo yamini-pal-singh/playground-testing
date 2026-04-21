@@ -143,6 +143,19 @@ run_test "Functional UI"  "STT Extended E2E"             "npx playwright test sr
 run_test "Functional UI"  "Voice Agent Positive"         "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Voice Agent: Positive'"
 run_test "Functional UI"  "Voice Agent Negative"         "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Voice Agent: Negative'"
 run_test "Functional UI"  "Voice Agent Edge Cases"       "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Voice Agent: Edge Cases'"
+run_test "Functional UI"  "STT Deep Navigation"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Navigation'"
+run_test "Functional UI"  "STT Deep Configuration"       "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Configuration'"
+run_test "Functional UI"  "STT Deep Upload"              "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Upload'"
+run_test "Functional UI"  "STT Deep Features"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Features'"
+run_test "Functional UI"  "STT Deep Run Analysis"        "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Run Analysis'"
+run_test "Functional UI"  "STT Deep Output"              "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Output'"
+run_test "Functional UI"  "STT Deep Credits"             "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Credits'"
+run_test "Functional UI"  "STT Deep Accessibility"       "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Accessibility'"
+run_test "Functional UI"  "STT Deep Performance"         "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Performance'"
+run_test "Functional UI"  "STT Deep DOM"                 "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep DOM'"
+run_test "Functional UI"  "STT Deep Code Sample"         "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Code Sample'"
+run_test "Functional UI"  "STT Deep Responsive"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Responsive'"
+run_test "Functional UI"  "STT Deep Network"             "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Deep Network'"
 
 # Sections 2-4 (Health Check, Backend API, Zero Indic) removed — only UI tests are active
 

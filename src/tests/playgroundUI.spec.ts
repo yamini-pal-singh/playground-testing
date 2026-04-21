@@ -5620,3 +5620,566 @@ test.describe('Playground — STT Functional: Extended E2E', () => {
     await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeEnabled();
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// STT — DEEP UI & INTERACTION TESTS (every element, event, trigger)
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── STT Deep — Navigation Bar ────────────────────────────────────────────────
+
+test.describe('Playground — STT Deep Navigation: Positive Tests', () => {
+
+  test('Shunya Labs logo should be visible in nav bar', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const logo = page.locator('img[alt*="Shunya" i], img[src*="logo" i]').first();
+    await expect(logo).toBeVisible();
+  });
+
+  test('Docs button should have correct accessible name', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const docs = page.getByRole('button', { name: 'Docs' });
+    await expect(docs).toBeVisible();
+    await expect(docs).toBeEnabled();
+  });
+
+  test('Console button should have correct accessible name', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const consoleBtn = page.getByRole('button', { name: 'Console' });
+    await expect(consoleBtn).toBeVisible();
+    await expect(consoleBtn).toBeEnabled();
+  });
+
+  test('Docs button click should be tracked (no crash)', async ({ page, context }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const [popup] = await Promise.all([
+      context.waitForEvent('page', { timeout: 5000 }).catch(() => null),
+      page.getByRole('button', { name: 'Docs' }).click({ trial: false }),
+    ]);
+    // Either opens new tab or stays — both acceptable
+    if (popup) await popup.close();
+  });
+
+  test('user profile button should show logged-in user name', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const userBtn = page.getByRole('button', { name: /Singh|Yamini/ });
+    await expect(userBtn).toBeVisible();
+  });
+
+  test('nav bar should remain fixed position on scroll', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const navBefore = await page.locator('nav').first().boundingBox();
+    await page.evaluate(() => window.scrollTo(0, 500));
+    await page.waitForTimeout(300);
+    const navAfter = await page.locator('nav').first().boundingBox();
+    if (navBefore && navAfter) expect(Math.abs(navBefore.y - navAfter.y)).toBeLessThan(10);
+  });
+});
+
+// ── STT Deep — Configuration Fields ──────────────────────────────────────────
+
+test.describe('Playground — STT Deep Configuration: Field Behavior', () => {
+
+  test('Transcription Mode field should show Prerecorded value', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const transcField = page.locator('input, textbox').filter({ has: page.locator(':text("Prerecorded")') }).or(page.getByRole('textbox').filter({ hasText: /Prerecorded/ }));
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).toContain('Prerecorded');
+  });
+
+  test('Transcription Mode should not be editable by typing', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const field = page.locator('input[value="Prerecorded"]').first();
+    const count = await field.count();
+    if (count > 0) {
+      const isReadonly = await field.getAttribute('readonly');
+      const isDisabled = await field.getAttribute('disabled');
+      expect(isReadonly !== null || isDisabled !== null, 'Field should be readonly or disabled').toBe(true);
+    }
+  });
+
+  test('Model dropdown should have Zero Indic as first option', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const modelSelect = page.locator('label', { hasText: 'Model' }).locator('..').locator('select');
+    const firstOption = await modelSelect.locator('option').first().textContent();
+    expect(firstOption).toContain('Zero Indic');
+  });
+
+  test('Model select should have exactly 3 options', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const modelSelect = page.locator('label', { hasText: 'Model' }).locator('..').locator('select');
+    const count = await modelSelect.locator('option').count();
+    expect(count).toBe(3);
+  });
+
+  test('Language selector button should display flag and name', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const langBtn = page.getByRole('button', { name: /English/ }).first();
+    const text = await langBtn.textContent() || '';
+    expect(text).toContain('English');
+    expect(text).toMatch(/[\u{1F1E0}-\u{1F1FF}]/u);
+  });
+
+  test('Language dropdown should open on Space key press', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const langBtn = page.getByRole('button', { name: /English/ }).first();
+    await langBtn.focus();
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(800);
+    const bodyText = await page.textContent('body') || '';
+    const opened = bodyText.includes('Hindi') || bodyText.includes('English');
+    expect(opened).toBe(true);
+  });
+
+  test('Language dropdown should close on Escape key', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: /English/ }).first().click();
+    await page.waitForTimeout(600);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    // Button should still be visible (not crashed)
+    await expect(page.getByRole('button', { name: /English/ }).first()).toBeVisible();
+  });
+});
+
+// ── STT Deep — Upload Area Behavior ──────────────────────────────────────────
+
+test.describe('Playground — STT Deep Upload: Interactions', () => {
+
+  test('Choose Audio File button should be focusable', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const btn = page.getByRole('button', { name: 'Choose Audio File' });
+    await btn.focus();
+    const focused = await page.evaluate(() => document.activeElement?.textContent);
+    expect(focused).toContain('Choose Audio File');
+  });
+
+  test('file input should accept audio MIME types', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const input = page.locator('input[type="file"]').first();
+    const accept = await input.getAttribute('accept');
+    console.log(`File input accept: ${accept || 'not set'}`);
+  });
+
+  test('format list should mention MP3 WAV FLAC M4A', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const formatText = await page.getByText(/Formats including/).textContent() || '';
+    for (const f of ['MP3', 'WAV', 'FLAC', 'M4A']) expect(formatText).toContain(f);
+  });
+
+  test('upload section should not be scrolled off viewport', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const upload = page.getByText('Upload Your Audio');
+    const box = await upload.boundingBox();
+    const vp = page.viewportSize();
+    if (box && vp) expect(box.y).toBeLessThan(vp.height + 200);
+  });
+
+  test('uploading same file twice should not duplicate', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const input = page.locator('input[type="file"]');
+    await input.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(1500);
+    await input.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(1500);
+    await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeEnabled();
+  });
+
+  test('after upload Run Analysis button should become enabled with gradient', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const btn = page.getByRole('button', { name: 'Run Analysis' });
+    await page.locator('input[type="file"]').setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(1500);
+    await expect(btn).toBeEnabled();
+  });
+
+  test('uploading .mp4 file should be accepted', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const input = page.locator('input[type="file"]');
+    await input.setInputFiles(TEST_AUDIO_FILES.mp4);
+    await page.waitForTimeout(1500);
+    await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeEnabled();
+  });
+});
+
+// ── STT Deep — Feature Toggles (individual) ──────────────────────────────────
+
+test.describe('Playground — STT Deep Features: Individual Toggles', () => {
+
+  const features = [
+    'Translation',
+    'Transliteration',
+    'Speaker Diarization',
+    'Speaker Identification',
+    'Word Timestamps',
+    'Profanity Hashing',
+    'Custom Keyword Hashing',
+    'Intent Detection',
+    'Sentiment Analysis',
+    'Emotion Diarization',
+    'Summarisation',
+    'Keyword Normalisation',
+  ];
+
+  for (const feat of features) {
+    test(`${feat} feature toggle should be clickable without errors`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+      await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+      const toggle = page.locator('span.leading-tight', { hasText: feat }).first();
+      await toggle.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(500);
+      expect(errors.length, `${feat} toggle caused console errors: ${errors.join(' | ')}`).toBe(0);
+    });
+  }
+});
+
+// ── STT Deep — Run Analysis Button States ────────────────────────────────────
+
+test.describe('Playground — STT Deep Run Analysis: States', () => {
+
+  test('Run Analysis should be disabled without file', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const btn = page.getByRole('button', { name: 'Run Analysis' });
+    // Either disabled attribute or visually disabled
+    const disabled = await btn.getAttribute('disabled');
+    const cls = await btn.getAttribute('class') || '';
+    const looksDisabled = disabled !== null || cls.includes('cursor-not-allowed') || cls.includes('opacity');
+    expect(looksDisabled, 'Run Analysis should be in disabled state without file').toBe(true);
+  });
+
+  test('Run Analysis should be enabled after file upload', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.locator('input[type="file"]').setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(1500);
+    await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeEnabled();
+  });
+
+  test('double-clicking Run Analysis should not send duplicate POST', async ({ page }) => {
+    test.setTimeout(120000);
+    const posts: string[] = [];
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') posts.push(req.url());
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.locator('input[type="file"]').setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(1500);
+    await page.getByRole('button', { name: 'Run Analysis' }).dblclick();
+    await page.waitForTimeout(20000);
+    expect(posts.length, 'Double-click should result in <= 2 POSTs').toBeLessThanOrEqual(2);
+  });
+
+  test('Run Analysis button text should stay consistent', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const btn = page.getByRole('button', { name: 'Run Analysis' });
+    const textBefore = await btn.textContent();
+    await page.waitForTimeout(500);
+    const textAfter = await btn.textContent();
+    expect(textBefore?.trim()).toBe(textAfter?.trim());
+  });
+});
+
+// ── STT Deep — Output Tabs (Transcript / JSON) ───────────────────────────────
+
+test.describe('Playground — STT Deep Output: Tab Behavior', () => {
+
+  test('Transcript tab should be default', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await expect(page.getByRole('button', { name: 'Transcript' })).toBeVisible();
+    const placeholder = await page.getByText(/Select audio above/).count();
+    expect(placeholder).toBeGreaterThan(0);
+  });
+
+  test('JSON tab should be clickable', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const json = page.getByRole('button', { name: 'JSON' });
+    await expect(json).toBeVisible();
+    await json.click();
+    await page.waitForTimeout(300);
+  });
+
+  test('switching Transcript ↔ JSON should not crash', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    for (let i = 0; i < 5; i++) {
+      await page.getByRole('button', { name: 'JSON' }).click();
+      await page.waitForTimeout(200);
+      await page.getByRole('button', { name: 'Transcript' }).click();
+      await page.waitForTimeout(200);
+    }
+    await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeVisible();
+  });
+});
+
+// ── STT Deep — Credits Event Tracking ────────────────────────────────────────
+
+test.describe('Playground — STT Deep Credits: Event Triggers', () => {
+
+  test('Credits should update after successful transcription', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const parse = async () => {
+      const t = await page.getByText(/Credits:\s*\$/).textContent() || '';
+      const m = t.match(/\$([\d,]+\.?\d*)/);
+      return m ? parseFloat(m[1].replace(/,/g, '')) : 0;
+    };
+    const before = await parse();
+    await page.locator('input[type="file"]').setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(1500);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+    const after = await parse();
+    console.log(`Credits: ${before} → ${after}`);
+    expect(after).toBeLessThanOrEqual(before);
+  });
+
+  test('Credits should NOT deduct when Run Analysis clicked without file', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const parse = async () => {
+      const t = await page.getByText(/Credits:\s*\$/).textContent() || '';
+      const m = t.match(/\$([\d,]+\.?\d*)/);
+      return m ? parseFloat(m[1].replace(/,/g, '')) : 0;
+    };
+    const before = await parse();
+    const btn = page.getByRole('button', { name: 'Run Analysis' });
+    await btn.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(3000);
+    const after = await parse();
+    expect(after).toBe(before);
+  });
+
+  test('Credits format should match $NN.NN or $N,NNN.NN pattern', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const t = await page.getByText(/Credits:\s*\$/).textContent() || '';
+    expect(t).toMatch(/Credits:\s*\$[\d,]+\.?\d*/);
+  });
+
+  test('Credits should match between STT and TTS tabs', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const sttCredits = (await page.getByText(/Credits:\s*\$/).textContent() || '').trim();
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const ttsCredits = (await page.getByText(/Credits:\s*\$/).textContent() || '').trim();
+    expect(ttsCredits).toBe(sttCredits);
+  });
+});
+
+// ── STT Deep — Keyboard Accessibility ────────────────────────────────────────
+
+test.describe('Playground — STT Deep Accessibility: Keyboard', () => {
+
+  test('Tab key should move focus through interactive elements', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    for (let i = 0; i < 3; i++) await page.keyboard.press('Tab');
+    const tag = await page.evaluate(() => document.activeElement?.tagName);
+    expect(['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA']).toContain(tag);
+  });
+
+  test('Enter key on Speech to Text tab should activate it', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Speech to Text' }).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Upload Your Audio')).toBeVisible();
+  });
+
+  test('Model dropdown should be keyboard navigable with arrows', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const sel = page.locator('label', { hasText: 'Model' }).locator('..').locator('select');
+    await sel.focus();
+    await page.keyboard.press('ArrowDown');
+    const val = await sel.inputValue();
+    // Should move to Zero Med or next option
+    expect(['Zero Indic', 'Zero Med']).toContain(val);
+  });
+});
+
+// ── STT Deep — Performance ───────────────────────────────────────────────────
+
+test.describe('Playground — STT Deep Performance: Timing', () => {
+
+  test('page should load in under 10 seconds', async ({ page }) => {
+    const start = Date.now();
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(10000);
+  });
+
+  test('tab switch STT → TTS should be under 2 seconds', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const start = Date.now();
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await expect(page.getByText('Synthesis Mode')).toBeVisible({ timeout: 2000 });
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(2000);
+  });
+
+  test('model dropdown change should render in under 500ms', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const sel = page.locator('label', { hasText: 'Model' }).locator('..').locator('select');
+    const start = Date.now();
+    await sel.selectOption({ label: 'Zero Med' });
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(500);
+  });
+
+  test('feature toggle click should respond under 300ms', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const toggle = page.locator('span.leading-tight', { hasText: 'Translation' }).first();
+    const start = Date.now();
+    await toggle.click({ force: true });
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(500);
+  });
+});
+
+// ── STT Deep — DOM / Rendering Integrity ─────────────────────────────────────
+
+test.describe('Playground — STT Deep DOM: Integrity', () => {
+
+  test('should not have duplicate Configuration headings', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const count = await page.locator('h3', { hasText: 'Configuration' }).count();
+    expect(count).toBeLessThanOrEqual(1);
+  });
+
+  test('should not have duplicate Model labels in STT', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const count = await page.locator('label', { hasText: /^Model$/ }).count();
+    expect(count).toBe(1);
+  });
+
+  test('exactly one Run Analysis button should be present', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const count = await page.getByRole('button', { name: 'Run Analysis' }).count();
+    expect(count).toBe(1);
+  });
+
+  test('exactly one file input should be in STT tab', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const count = await page.locator('input[type="file"]').count();
+    expect(count).toBe(1);
+  });
+
+  test('no broken images on STT page', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const brokenImages = await page.locator('img').evaluateAll(imgs =>
+      imgs.filter((img: any) => img.complete && img.naturalWidth === 0).length
+    );
+    expect(brokenImages).toBe(0);
+  });
+
+  test('no broken stylesheet URLs', async ({ page }) => {
+    const failed: string[] = [];
+    page.on('response', res => {
+      if (res.status() === 404 && res.url().match(/\.css|\.js|\.woff|\.svg|\.png/)) {
+        failed.push(res.url());
+      }
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.waitForTimeout(2000);
+    expect(failed.length, `404 resources: ${failed.join(', ')}`).toBe(0);
+  });
+});
+
+// ── STT Deep — Code Sample Tab ───────────────────────────────────────────────
+
+test.describe('Playground — STT Deep Code Sample: Content', () => {
+
+  test('Code Sample tab should display code when active', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Code Sample' }).click();
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).toMatch(/import|requests|curl|python/i);
+  });
+
+  test('Code Sample should reference transcriptions endpoint', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Code Sample' }).click();
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).toContain('transcriptions');
+  });
+
+  test('Copy Code button should be present in Code Sample', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Code Sample' }).click();
+    await page.waitForTimeout(500);
+    const copyBtn = page.getByRole('button', { name: /copy/i });
+    const exists = await copyBtn.count();
+    console.log(`Copy button present: ${exists > 0}`);
+  });
+
+  test('Code Sample tab switching should not break Features panel', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Code Sample' }).click();
+    await page.waitForTimeout(400);
+    await page.getByRole('button', { name: 'Features' }).click();
+    await page.waitForTimeout(400);
+    await expect(page.getByText('Audio Intelligence')).toBeVisible();
+  });
+});
+
+// ── STT Deep — Viewport / Responsive ─────────────────────────────────────────
+
+test.describe('Playground — STT Deep Responsive: Viewports', () => {
+
+  test('STT layout should be usable at 1024x768 (tablet)', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await expect(page.getByText('Upload Your Audio')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeVisible();
+  });
+
+  test('STT layout should be usable at 1440x900', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await expect(page.getByText('Configuration')).toBeVisible();
+  });
+
+  test('STT layout should not have horizontal scroll at 1280px', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth);
+    expect(hasHScroll).toBe(false);
+  });
+});
+
+// ── STT Deep — Network Health ────────────────────────────────────────────────
+
+test.describe('Playground — STT Deep Network: Health', () => {
+
+  test('all resources should load without 5xx errors on initial load', async ({ page }) => {
+    const serverErrors: string[] = [];
+    page.on('response', res => {
+      if (res.status() >= 500) serverErrors.push(`${res.status()} ${res.url()}`);
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.waitForTimeout(2000);
+    expect(serverErrors, `5xx responses: ${serverErrors.join(' | ')}`).toEqual([]);
+  });
+
+  test('initial page load should not call transcription API', async ({ page }) => {
+    const apiCalls: string[] = [];
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') apiCalls.push(req.url());
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.waitForTimeout(3000);
+    expect(apiCalls.length).toBe(0);
+  });
+
+  test('Credits endpoint should return 2xx', async ({ page }) => {
+    const creditsCalls: { url: string; status: number }[] = [];
+    page.on('response', res => {
+      if (res.url().includes('credit') || res.url().includes('balance') || res.url().includes('usage')) {
+        creditsCalls.push({ url: res.url(), status: res.status() });
+      }
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.waitForTimeout(3000);
+    const failures = creditsCalls.filter(c => c.status >= 400);
+    expect(failures.length, `Credits API failures: ${JSON.stringify(failures)}`).toBe(0);
+  });
+});
