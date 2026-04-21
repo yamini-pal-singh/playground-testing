@@ -1143,7 +1143,7 @@ function renderHistory() {
       var timeStr = new Date(r.runTimestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
       var shortId = (r.runId || r.runTimestamp).replace(/[^a-z0-9]/gi, '').substring(0, 8);
       var globalIdx = SUMMARIES.indexOf(r);
-      html += '<div onclick="openModal(' + globalIdx + ')" style="background:#1a1a2e;border:1px solid #252540;border-radius:10px;padding:16px;cursor:pointer" onmouseover="this.style.borderColor=\\'#6c47ff\\'" onmouseout="this.style.borderColor=\\'#252540\\'">';
+      html += '<div onclick="event.stopPropagation();openModal(' + globalIdx + ')" style="background:#1a1a2e;border:1px solid #252540;border-radius:10px;padding:16px;cursor:pointer" onmouseover="this.style.borderColor=\\'#6c47ff\\'" onmouseout="this.style.borderColor=\\'#252540\\'">';
       html += '<div style="font-size:16px;font-weight:600;margin-bottom:4px">' + timeStr + '</div>';
       html += '<div style="font-size:12px;color:#6b7280;margin-bottom:10px">Run ' + shortId + '</div>';
       html += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
@@ -1251,9 +1251,20 @@ function openModal(idx) {
   });
   document.getElementById('modalSuites').innerHTML = sHtml;
   var modal = document.getElementById('runModal');
+  // Save scroll position and lock body scroll
+  document.body.dataset.savedScroll = window.scrollY;
+  document.body.style.overflow = 'hidden';
   modal.style.display = 'flex';
+  // Reset modal scroll to top so user sees KPIs first
+  var modalBody = modal.firstElementChild;
+  if (modalBody) modalBody.scrollTop = 0;
 }
-function closeModal() { document.getElementById('runModal').style.display = 'none'; }
+function closeModal() {
+  document.getElementById('runModal').style.display = 'none';
+  document.body.style.overflow = '';
+  var saved = parseInt(document.body.dataset.savedScroll || '0', 10);
+  window.scrollTo(0, saved);
+}
 
 // ── Insights tab (new aggregated analytics) ──────────────────────────────
 function renderInsights() {
