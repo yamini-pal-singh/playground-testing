@@ -139,6 +139,10 @@ run_test "Functional UI"  "TTS Navigation During Work"   "npx playwright test sr
 run_test "Functional UI"  "STT E2E Upload & Analyze"     "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Functional: Upload'"
 run_test "Functional UI"  "STT Feature Toggles"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Functional: Feature Toggles'"
 run_test "Functional UI"  "STT Cross-Feature"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Functional: Cross-Feature'"
+run_test "Functional UI"  "STT Extended E2E"             "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Functional: Extended'"
+run_test "Functional UI"  "Voice Agent Positive"         "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Voice Agent: Positive'"
+run_test "Functional UI"  "Voice Agent Negative"         "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Voice Agent: Negative'"
+run_test "Functional UI"  "Voice Agent Edge Cases"       "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Voice Agent: Edge Cases'"
 
 # Sections 2-4 (Health Check, Backend API, Zero Indic) removed — only UI tests are active
 

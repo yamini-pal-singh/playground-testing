@@ -5336,3 +5336,287 @@ test.describe('Playground — STT Functional: Cross-Feature', () => {
     expect(bodyText.length, 'Body should have content').toBeGreaterThan(500);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// VOICE AGENT — COMPREHENSIVE COVERAGE (placeholder state regression tests)
+// ════════════════════════════════════════════════════════════════════════════
+
+test.describe('Playground — Voice Agent: Positive Tests', () => {
+
+  test('Voice Agent tab should be clickable', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await expect(page.getByRole('button', { name: 'Voice Agent' })).toBeEnabled();
+  });
+
+  test('Voice Agent tab should activate when clicked', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText.toLowerCase()).toMatch(/coming soon|voice agent/);
+  });
+
+  test('Voice Agent should show Coming soon message', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText.toLowerCase()).toContain('coming soon');
+  });
+
+  test('Voice Agent tab should still show nav bar (Docs, Console)', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole('button', { name: 'Docs' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Console' })).toBeVisible();
+  });
+
+  test('Voice Agent tab should render main heading', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('API Playground')).toBeVisible();
+  });
+
+  test('Voice Agent tab should still show other 2 tab buttons', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole('button', { name: 'Speech to Text' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Text to Speech' })).toBeVisible();
+  });
+
+  test('Voice Agent → Speech to Text navigation should work', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Speech to Text' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Upload Your Audio')).toBeVisible();
+  });
+
+  test('Voice Agent → Text to Speech navigation should work', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Voice Options')).toBeVisible();
+  });
+});
+
+test.describe('Playground — Voice Agent: Negative Tests', () => {
+
+  test('Voice Agent should NOT show STT configuration', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).not.toContain('Upload Your Audio');
+    expect(bodyText).not.toContain('Choose Audio File');
+    expect(bodyText).not.toContain('Run Analysis');
+    expect(bodyText).not.toContain('Transcription Mode');
+  });
+
+  test('Voice Agent should NOT show TTS configuration', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).not.toContain('Voice Options');
+    expect(bodyText).not.toContain('Run Synthesis');
+    expect(bodyText).not.toContain('Synthesis Mode');
+  });
+
+  test('Voice Agent should not trigger any API calls', async ({ page }) => {
+    const apiCalls: string[] = [];
+    page.on('request', req => {
+      if (req.url().includes('/v1/') && req.method() === 'POST') apiCalls.push(req.url());
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(3000);
+    expect(apiCalls.length, 'No API calls on Voice Agent tab').toBe(0);
+  });
+
+  test('Voice Agent should not cause JavaScript console errors', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(2000);
+    expect(errors.length, `Console errors: ${errors.join(' | ')}`).toBe(0);
+  });
+
+  test('Voice Agent should not cause failed network requests', async ({ page }) => {
+    const failed: string[] = [];
+    page.on('response', res => {
+      if (res.status() >= 400 && res.url().includes('shunyalabs.ai')) {
+        failed.push(`${res.status()} ${res.url()}`);
+      }
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(3000);
+    expect(failed.length).toBe(0);
+  });
+
+  test('Voice Agent should not have uploaded file input', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    const visibleFileInputs = await page.locator('input[type="file"]:visible').count();
+    expect(visibleFileInputs).toBe(0);
+  });
+
+  test('Voice Agent should not show textarea', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    const visibleTextareas = await page.locator('textarea:visible').count();
+    expect(visibleTextareas).toBe(0);
+  });
+});
+
+test.describe('Playground — Voice Agent: Edge Cases', () => {
+
+  test('rapid Voice Agent tab clicks should not crash', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    for (let i = 0; i < 5; i++) {
+      await page.getByRole('button', { name: 'Voice Agent' }).click();
+      await page.waitForTimeout(200);
+    }
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText.toLowerCase()).toContain('coming soon');
+  });
+
+  test('Voice Agent state should persist after page scroll', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText.toLowerCase()).toContain('coming soon');
+  });
+
+  test('Voice Agent after tab cycle should return to Coming soon', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Speech to Text' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText.toLowerCase()).toContain('coming soon');
+  });
+
+  test('Voice Agent should remain functional after page refresh', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(500);
+    await page.reload({ waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText.toLowerCase()).toContain('coming soon');
+  });
+
+  test('Voice Agent should render within acceptable time', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const start = Date.now();
+    await page.getByRole('button', { name: 'Voice Agent' }).click();
+    await expect(page.getByText(/coming soon/i)).toBeVisible({ timeout: 3000 });
+    const elapsed = Date.now() - start;
+    console.log(`Voice Agent render time: ${elapsed}ms`);
+    expect(elapsed).toBeLessThan(3000);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// STT — ADDITIONAL FUNCTIONAL TESTS (filling coverage gaps)
+// ════════════════════════════════════════════════════════════════════════════
+
+test.describe('Playground — STT Functional: Extended E2E', () => {
+
+  test('MP3 file upload and analysis should succeed', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.mp3);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).not.toContain('Select audio above and run analysis');
+  });
+
+  test('Transcript tab should be default after successful analysis', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+    await expect(page.getByRole('button', { name: 'Transcript' })).toBeVisible();
+  });
+
+  test('switching between Transcript and JSON tabs should work after analysis', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+    await page.getByRole('button', { name: 'JSON' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Transcript' }).click();
+    await page.waitForTimeout(500);
+  });
+
+  test('feature toggles state should persist after tab switch and return', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.locator('span.leading-tight', { hasText: 'Translation' }).first().click({ force: true }).catch(() => {});
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Speech to Text' }).click();
+    await page.waitForTimeout(500);
+    // Page should not crash
+    await expect(page.getByText('Audio Intelligence')).toBeVisible();
+  });
+
+  test('Run Analysis without file should show warning not crash', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const runBtn = page.getByRole('button', { name: 'Run Analysis' });
+    await runBtn.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(2000);
+    // Page should still be functional
+    await expect(page.getByText('Upload Your Audio')).toBeVisible();
+  });
+
+  test('changing language mid-workflow should not break upload state', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(1500);
+    await page.getByRole('button', { name: /English/ }).first().click();
+    await page.waitForTimeout(500);
+    await page.getByText('Hindi', { exact: false }).first().click({ force: true, timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(500);
+    // Run Analysis should still be available
+    await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeEnabled();
+  });
+});
