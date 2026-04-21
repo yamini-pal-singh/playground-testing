@@ -11,6 +11,7 @@ import { google, sheets_v4 } from 'googleapis';
 import { GOOGLE_SHEETS_CONFIG } from '../src/config/api.config';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
@@ -141,6 +142,55 @@ async function findOrCreateSheet(
   });
 
   return createResponse.data.replies?.[0]?.addSheet?.properties?.sheetId || 0;
+}
+
+// ── Auto-scan spec files ────────────────────────────────────────────────────
+
+function scanTestsFromSpec(): TestCase[] {
+  const specPath = path.resolve(__dirname, '..', 'src', 'tests', 'playgroundUI.spec.ts');
+  const src = fs.readFileSync(specPath, 'utf-8');
+  const lines = src.split('\n');
+
+  const tests: TestCase[] = [];
+  let currentDescribe = '';
+  let n = 0;
+
+  for (const line of lines) {
+    const d = line.match(/test\.describe\(['`]([^'`]+)['`]/);
+    if (d) currentDescribe = d[1];
+    const t = line.match(/^\s*test\(['`]([^'`]+)['`]/);
+    if (t && currentDescribe) {
+      n++;
+      const moduleFull = currentDescribe.replace(/^Playground — /, '');
+      const priority =
+        /Feature Verification/.test(moduleFull) ? 'P0' :
+        /Functional/.test(moduleFull) ? 'P0' :
+        /Negative/.test(moduleFull) ? 'P3' :
+        /Edge Cases?/.test(moduleFull) ? 'P2' :
+        /Additional/.test(moduleFull) ? 'P1' :
+        'P0';
+      const type = /Functional|Feature Verification|API|Network|Performance/.test(moduleFull)
+        ? 'Integration' : 'Functional/UI';
+      const category =
+        /TTS|Text to Speech/i.test(moduleFull) ? 'Text to Speech' :
+        /Voice Agent/i.test(moduleFull) ? 'Voice Agent' :
+        /Feature Verification/.test(moduleFull) ? 'Feature Verification' :
+        /STT|Speech to Text|Upload|Transcript|Credits|Tab Navigation|Model Selection|Language|Audio Intelligence|Page Load|Sample Audio/i.test(moduleFull) ? 'Speech to Text' :
+        'Playground UI';
+      tests.push({
+        id: tcId(n),
+        category,
+        module: moduleFull,
+        test_name: t[1],
+        type,
+        priority,
+        status: '',
+        last_run_date: '',
+        last_result: '',
+      });
+    }
+  }
+  return tests;
 }
 
 // ── All 314 Test Cases ──────────────────────────────────────────────────────
@@ -646,7 +696,7 @@ async function main(): Promise<void> {
   // Type column index (0-based)
   const TYPE_COL = 4;
 
-  const allTests = buildAllTestCases();
+  const allTests = scanTestsFromSpec();
   console.log(`\n[MasterTestSheet] Total test cases: ${allTests.length}`);
 
   // Summary by category
