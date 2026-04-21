@@ -1,9 +1,9 @@
 name: Scheduled Playground Tests (Cloud Backup)
 
 on:
-  # Runs at 08:00 UTC daily (13:30 IST). Acts as safety net when local Mac is off.
+  # Runs at 16:30 UTC daily = 22:00 IST (10 PM IST)
   schedule:
-    - cron: '0 8 * * *'
+    - cron: '30 16 * * *'
   # Allow manual trigger
   workflow_dispatch:
 
