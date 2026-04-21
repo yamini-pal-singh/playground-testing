@@ -127,6 +127,11 @@ run_test "Functional UI"  "TTS Output Options"           "npx playwright test sr
 run_test "Functional UI"  "TTS Audio Player"             "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Audio Player'"
 run_test "Functional UI"  "TTS Negative"                 "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS: Negative'"
 run_test "Functional UI"  "TTS Edge Cases"               "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS: Edge Cases'"
+run_test "Functional UI"  "TTS E2E Synthesis"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: End-to-End'"
+run_test "Functional UI"  "TTS Transliteration"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Transliteration'"
+run_test "Functional UI"  "TTS Voice Cascade"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Voice Cascade'"
+run_test "Functional UI"  "TTS Mode & Format"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Mode'"
+run_test "Functional UI"  "TTS Auth & Errors"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Error'"
 
 # Sections 2-4 (Health Check, Backend API, Zero Indic) removed — only UI tests are active
 
