@@ -4,7 +4,15 @@
 #
 # Usage: bash scripts/setup-github-secrets.sh
 
-set -euo pipefail
+set -uo pipefail
+
+# Add Homebrew path so gh is found
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+if ! command -v gh &>/dev/null; then
+  echo "❌ gh CLI not found. Install it: brew install gh"
+  exit 1
+fi
 
 REPO="yamini-pal-singh/playground-testing"
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
