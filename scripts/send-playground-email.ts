@@ -435,14 +435,28 @@ async function sendEmail() {
     attachments,
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to ${recipients.trim()} — MessageId: ${info.messageId}`);
-    console.log(`   📊 Summary: ${passed}/${totalSuites} passed (${passRate}%) | ${failed} failed`);
-  } catch (error: any) {
-    console.error(`❌ Email failed: ${error.message}`);
-    process.exit(1);
+  const MAX_ATTEMPTS = 3;
+  const BACKOFF_MS = 30000;
+  let lastError: any;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent to ${recipients.trim()} — MessageId: ${info.messageId}${attempt > 1 ? ` (attempt ${attempt}/${MAX_ATTEMPTS})` : ''}`);
+      console.log(`   📊 Summary: ${passed}/${totalSuites} passed (${passRate}%) | ${failed} failed`);
+      return;
+    } catch (error: any) {
+      lastError = error;
+      console.error(`❌ Email attempt ${attempt}/${MAX_ATTEMPTS} failed: ${error.message}`);
+      if (attempt < MAX_ATTEMPTS) {
+        console.log(`⏳ Retrying in ${BACKOFF_MS / 1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, BACKOFF_MS));
+      }
+    }
   }
+
+  console.error(`❌ All ${MAX_ATTEMPTS} email attempts failed. Last error: ${lastError?.message}`);
+  process.exit(1);
 }
 
 sendEmail();
