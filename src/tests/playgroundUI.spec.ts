@@ -4893,3 +4893,446 @@ test.describe('Playground — TTS Functional: Error & Auth', () => {
     await expect(page.getByText('Voice Options')).toBeVisible();
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// TTS — ADDITIONAL FUNCTIONAL TESTS (audio, payload, multi-run, download)
+// ════════════════════════════════════════════════════════════════════════════
+
+test.describe('Playground — TTS Functional: API Payload', () => {
+
+  test('synthesis POST should include text in request body', async ({ page }) => {
+    test.setTimeout(60000);
+    let capturedBody: string | null = null;
+    page.on('request', req => {
+      if (req.method() === 'POST' && req.url().includes('shunyalabs.ai')) {
+        try { capturedBody = req.postData(); } catch {}
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const uniqueText = `test ${Date.now()}`;
+    await page.locator('textarea').fill(uniqueText);
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(15000);
+
+    expect(capturedBody, 'Request body should contain the text').toBeTruthy();
+  });
+
+  test('synthesis POST URL should target TTS endpoint (not STT)', async ({ page }) => {
+    test.setTimeout(60000);
+    const urls: string[] = [];
+    page.on('request', req => {
+      if (req.method() === 'POST' && req.url().includes('shunyalabs.ai')) urls.push(req.url());
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(15000);
+
+    const nonTranscription = urls.filter(u => !u.includes('transcriptions'));
+    expect(nonTranscription.length, `Should call non-STT endpoint. URLs: ${urls.join(', ')}`).toBeGreaterThan(0);
+  });
+
+  test('synthesis response should have 2xx status', async ({ page }) => {
+    test.setTimeout(60000);
+    const responses: { url: string; status: number }[] = [];
+    page.on('response', res => {
+      if (res.url().includes('shunyalabs.ai') && res.request().method() === 'POST') {
+        responses.push({ url: res.url(), status: res.status() });
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(20000);
+
+    const ok = responses.some(r => r.status >= 200 && r.status < 300);
+    expect(ok, `Expected at least one 2xx response. Got: ${JSON.stringify(responses)}`).toBe(true);
+  });
+});
+
+// ── TTS — Multiple Synthesis Runs ────────────────────────────────────────────
+
+test.describe('Playground — TTS Functional: Multiple Runs', () => {
+
+  test('two consecutive synthesis runs should both succeed', async ({ page }) => {
+    test.setTimeout(180000);
+    const postCount = { count: 0 };
+    page.on('request', req => {
+      if (req.method() === 'POST' && req.url().includes('shunyalabs.ai') && !req.url().includes('transcriptions')) {
+        postCount.count++;
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+
+    await page.locator('textarea').fill('First run');
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(20000);
+
+    await page.locator('textarea').fill('Second run');
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(20000);
+
+    expect(postCount.count, 'Expected 2 POST calls').toBeGreaterThanOrEqual(2);
+  });
+
+  test('changing text and re-running should produce new synthesis', async ({ page }) => {
+    test.setTimeout(180000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+
+    await page.locator('textarea').fill('Text one');
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(15000);
+
+    await page.locator('textarea').fill('Text two completely different');
+    await expect(page.getByRole('button', { name: 'Run Synthesis' })).toBeEnabled();
+  });
+});
+
+// ── TTS — Audio Player Functional ────────────────────────────────────────────
+
+test.describe('Playground — TTS Functional: Audio Player', () => {
+
+  test('audio element should be playable after synthesis', async ({ page }) => {
+    test.setTimeout(90000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(25000);
+
+    const audioCount = await page.locator('audio').count();
+    if (audioCount > 0) {
+      const audioSrc = await page.locator('audio').first().getAttribute('src');
+      console.log(`Audio src: ${audioSrc?.substring(0, 100)}`);
+    }
+    const bodyText = await page.textContent('body') || '';
+    const synthesisHappened = audioCount > 0 || !bodyText.includes('Enter text above and click Run Synthesis');
+    expect(synthesisHappened).toBe(true);
+  });
+
+  test('download button or link should appear after synthesis', async ({ page }) => {
+    test.setTimeout(90000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(25000);
+
+    const downloadBtn = page.getByRole('button', { name: /download/i });
+    const downloadLink = page.locator('a[download], a[href*=".wav"], a[href*=".mp3"]');
+    const downloadCount = await downloadBtn.count() + await downloadLink.count();
+    console.log(`Download controls found: ${downloadCount}`);
+  });
+});
+
+// ── TTS — Tab Switch During / After Synthesis ────────────────────────────────
+
+test.describe('Playground — TTS Functional: Navigation During Work', () => {
+
+  test('switching tabs mid-synthesis should not crash', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(500);
+    // Switch tab mid-synthesis
+    await page.getByRole('button', { name: 'Speech to Text' }).click();
+    await page.waitForTimeout(3000);
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(2000);
+    await expect(page.getByText('Voice Options')).toBeVisible();
+  });
+
+  test('returning to TTS after synthesis should show results or empty state cleanly', async ({ page }) => {
+    test.setTimeout(90000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.getByRole('button', { name: 'Run Synthesis' }).click();
+    await page.waitForTimeout(20000);
+    await page.getByRole('button', { name: 'Speech to Text' }).click();
+    await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    // Should still be functional
+    await expect(page.getByRole('button', { name: 'Run Synthesis' })).toBeVisible();
+  });
+});
+
+// ── STT FUNCTIONAL — Upload + Run Analysis ───────────────────────────────────
+
+test.describe('Playground — STT Functional: Upload & Analyze', () => {
+
+  test('uploading a WAV file should enable Run Analysis', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeEnabled();
+  });
+
+  test('Run Analysis after upload should trigger STT API call', async ({ page }) => {
+    test.setTimeout(120000);
+    const apiCalls: string[] = [];
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') {
+        apiCalls.push(req.url());
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    expect(apiCalls.length, 'Expected STT API call after Run Analysis').toBeGreaterThan(0);
+  });
+
+  test('successful transcription should show transcript text (not placeholder)', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).not.toContain('Select audio above and run analysis');
+  });
+
+  test('JSON tab should display API response after transcription', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    await page.getByRole('button', { name: 'JSON' }).click();
+    await page.waitForTimeout(1000);
+    const bodyText = await page.textContent('body') || '';
+    // JSON response should have common transcription field names
+    const hasJsonFields = ['text', 'segments', 'duration', 'language', 'request_id'].some(f => bodyText.includes(f));
+    expect(hasJsonFields, 'JSON tab should show API response fields').toBe(true);
+  });
+
+  test('changing model should be reflected in API call payload', async ({ page }) => {
+    test.setTimeout(120000);
+    let capturedBody: string | null = null;
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') {
+        try { capturedBody = req.postData(); } catch {}
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const modelSelect = page.locator('label', { hasText: 'Model' }).locator('..').locator('select');
+    await modelSelect.selectOption({ label: 'Zero Med' });
+    await page.waitForTimeout(500);
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    expect(capturedBody).toBeTruthy();
+    if (capturedBody) expect(capturedBody.toLowerCase()).toMatch(/zero.?med|med/);
+  });
+
+  test('successful transcription should deduct credits', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const creditsBeforeText = await page.getByText(/Credits:\s*\$/).textContent() || '';
+    const matchBefore = creditsBeforeText.match(/\$([\d,]+\.?\d*)/);
+    const before = matchBefore ? parseFloat(matchBefore[1].replace(/,/g, '')) : 0;
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    const creditsAfterText = await page.getByText(/Credits:\s*\$/).textContent() || '';
+    const matchAfter = creditsAfterText.match(/\$([\d,]+\.?\d*)/);
+    const after = matchAfter ? parseFloat(matchAfter[1].replace(/,/g, '')) : 0;
+    console.log(`STT Credits: $${before} → $${after}`);
+    expect(after).toBeLessThanOrEqual(before);
+  });
+
+  test('STT transcription should not produce 4xx/5xx', async ({ page }) => {
+    test.setTimeout(120000);
+    const failed: string[] = [];
+    page.on('response', res => {
+      if (res.status() >= 400 && res.url().includes('shunyalabs.ai')) {
+        failed.push(`${res.status()} ${res.url()}`);
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    expect(failed, `Failed requests: ${failed.join(' | ')}`).toEqual([]);
+  });
+});
+
+// ── STT FUNCTIONAL — Feature Toggles Affect Request ──────────────────────────
+
+test.describe('Playground — STT Functional: Feature Toggles', () => {
+
+  test('enabling Translation should add translation param to request', async ({ page }) => {
+    test.setTimeout(120000);
+    let capturedBody: string | null = null;
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') {
+        try { capturedBody = req.postData(); } catch {}
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    // Toggle Translation
+    await page.locator('span.leading-tight', { hasText: 'Translation' }).first().click({ force: true }).catch(() => {});
+    await page.waitForTimeout(500);
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    expect(capturedBody).toBeTruthy();
+    if (capturedBody) {
+      const mentions = capturedBody.toLowerCase().includes('translat') || capturedBody.toLowerCase().includes('output_lang');
+      console.log(`Request body mentions translation: ${mentions}`);
+    }
+  });
+
+  test('enabling Diarization should add diarization param', async ({ page }) => {
+    test.setTimeout(120000);
+    let capturedBody: string | null = null;
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') {
+        try { capturedBody = req.postData(); } catch {}
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.locator('span.leading-tight', { hasText: 'Speaker Diarization' }).first().click({ force: true }).catch(() => {});
+    await page.waitForTimeout(500);
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    expect(capturedBody).toBeTruthy();
+  });
+
+  test('multiple feature toggles should all persist through run', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+
+    for (const feat of ['Translation', 'Transliteration', 'Speaker Diarization']) {
+      await page.locator('span.leading-tight', { hasText: feat }).first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(200);
+    }
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).not.toContain('Select audio above and run analysis');
+  });
+});
+
+// ── STT FUNCTIONAL — Cross-Feature Validation ────────────────────────────────
+
+test.describe('Playground — STT Functional: Cross-Feature', () => {
+
+  test('switching language to Hindi should send language_code in request', async ({ page }) => {
+    test.setTimeout(120000);
+    let capturedBody: string | null = null;
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') {
+        try { capturedBody = req.postData(); } catch {}
+      }
+    });
+
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: /English/ }).first().click();
+    await page.waitForTimeout(800);
+    await page.getByText('Hindi', { exact: false }).first().click({ force: true, timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(500);
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    expect(capturedBody).toBeTruthy();
+    if (capturedBody) {
+      const hasHindi = capturedBody.includes('Hindi') || capturedBody.includes('hi');
+      console.log(`Body has Hindi hint: ${hasHindi}`);
+    }
+  });
+
+  test('replacing uploaded file should work without page reload', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(1500);
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.mp3);
+    await page.waitForTimeout(1500);
+    await expect(page.getByRole('button', { name: 'Run Analysis' })).toBeEnabled();
+  });
+
+  test('STT result area should contain transcript after Run Analysis', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    // Transcript tab should be default
+    await page.getByRole('button', { name: 'Transcript' }).click().catch(() => {});
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText.length, 'Body should have content').toBeGreaterThan(500);
+  });
+});

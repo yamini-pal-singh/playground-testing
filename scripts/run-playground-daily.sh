@@ -132,6 +132,13 @@ run_test "Functional UI"  "TTS Transliteration"          "npx playwright test sr
 run_test "Functional UI"  "TTS Voice Cascade"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Voice Cascade'"
 run_test "Functional UI"  "TTS Mode & Format"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Mode'"
 run_test "Functional UI"  "TTS Auth & Errors"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Error'"
+run_test "Functional UI"  "TTS API Payload"              "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: API Payload'"
+run_test "Functional UI"  "TTS Multiple Runs"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Multiple'"
+run_test "Functional UI"  "TTS Audio Player E2E"         "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Audio Player'"
+run_test "Functional UI"  "TTS Navigation During Work"   "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Functional: Navigation'"
+run_test "Functional UI"  "STT E2E Upload & Analyze"     "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Functional: Upload'"
+run_test "Functional UI"  "STT Feature Toggles"          "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Functional: Feature Toggles'"
+run_test "Functional UI"  "STT Cross-Feature"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'STT Functional: Cross-Feature'"
 
 # Sections 2-4 (Health Check, Backend API, Zero Indic) removed — only UI tests are active
 
