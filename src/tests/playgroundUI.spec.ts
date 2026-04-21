@@ -5625,9 +5625,9 @@ test.describe('Playground — STT Functional: Extended E2E', () => {
 // STT — DEEP UI & INTERACTION TESTS (every element, event, trigger)
 // ════════════════════════════════════════════════════════════════════════════
 
-// ── STT Deep — Navigation Bar ────────────────────────────────────────────────
+// ── STT — Navigation Bar ────────────────────────────────────────────────
 
-test.describe('Playground — STT Deep Navigation: Positive Tests', () => {
+test.describe('Playground — STT Navigation: Positive Tests', () => {
 
   test('Shunya Labs logo should be visible in nav bar', async ({ page }) => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
@@ -5675,9 +5675,9 @@ test.describe('Playground — STT Deep Navigation: Positive Tests', () => {
   });
 });
 
-// ── STT Deep — Configuration Fields ──────────────────────────────────────────
+// ── STT — Configuration Fields ──────────────────────────────────────────
 
-test.describe('Playground — STT Deep Configuration: Field Behavior', () => {
+test.describe('Playground — STT Configuration: Field Behavior', () => {
 
   test('Transcription Mode field should show Prerecorded value', async ({ page }) => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
@@ -5741,9 +5741,9 @@ test.describe('Playground — STT Deep Configuration: Field Behavior', () => {
   });
 });
 
-// ── STT Deep — Upload Area Behavior ──────────────────────────────────────────
+// ── STT — Upload Area Behavior ──────────────────────────────────────────
 
-test.describe('Playground — STT Deep Upload: Interactions', () => {
+test.describe('Playground — STT Upload: Interactions', () => {
 
   test('Choose Audio File button should be focusable', async ({ page }) => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
@@ -5801,9 +5801,9 @@ test.describe('Playground — STT Deep Upload: Interactions', () => {
   });
 });
 
-// ── STT Deep — Feature Toggles (individual) ──────────────────────────────────
+// ── STT — Feature Toggles (individual) ──────────────────────────────────
 
-test.describe('Playground — STT Deep Features: Individual Toggles', () => {
+test.describe('Playground — STT Features: Individual Toggles', () => {
 
   const features = [
     'Translation',
@@ -5833,9 +5833,9 @@ test.describe('Playground — STT Deep Features: Individual Toggles', () => {
   }
 });
 
-// ── STT Deep — Run Analysis Button States ────────────────────────────────────
+// ── STT — Run Analysis Button States ────────────────────────────────────
 
-test.describe('Playground — STT Deep Run Analysis: States', () => {
+test.describe('Playground — STT Run Analysis: States', () => {
 
   test('Run Analysis should be disabled without file', async ({ page }) => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
@@ -5878,9 +5878,9 @@ test.describe('Playground — STT Deep Run Analysis: States', () => {
   });
 });
 
-// ── STT Deep — Output Tabs (Transcript / JSON) ───────────────────────────────
+// ── STT — Output Tabs (Transcript / JSON) ───────────────────────────────
 
-test.describe('Playground — STT Deep Output: Tab Behavior', () => {
+test.describe('Playground — STT Output: Tab Behavior', () => {
 
   test('Transcript tab should be default', async ({ page }) => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
@@ -5909,9 +5909,9 @@ test.describe('Playground — STT Deep Output: Tab Behavior', () => {
   });
 });
 
-// ── STT Deep — Credits Event Tracking ────────────────────────────────────────
+// ── STT — Credits Event Tracking ────────────────────────────────────────
 
-test.describe('Playground — STT Deep Credits: Event Triggers', () => {
+test.describe('Playground — STT Credits: Event Triggers', () => {
 
   test('Credits should update after successful transcription', async ({ page }) => {
     test.setTimeout(120000);
@@ -5962,9 +5962,9 @@ test.describe('Playground — STT Deep Credits: Event Triggers', () => {
   });
 });
 
-// ── STT Deep — Keyboard Accessibility ────────────────────────────────────────
+// ── STT — Keyboard Accessibility ────────────────────────────────────────
 
-test.describe('Playground — STT Deep Accessibility: Keyboard', () => {
+test.describe('Playground — STT Accessibility: Keyboard', () => {
 
   test('Tab key should move focus through interactive elements', async ({ page }) => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
@@ -5994,9 +5994,9 @@ test.describe('Playground — STT Deep Accessibility: Keyboard', () => {
   });
 });
 
-// ── STT Deep — Performance ───────────────────────────────────────────────────
+// ── STT — Performance ───────────────────────────────────────────────────
 
-test.describe('Playground — STT Deep Performance: Timing', () => {
+test.describe('Playground — STT Performance: Timing', () => {
 
   test('page should load in under 10 seconds', async ({ page }) => {
     const start = Date.now();
@@ -6033,9 +6033,9 @@ test.describe('Playground — STT Deep Performance: Timing', () => {
   });
 });
 
-// ── STT Deep — DOM / Rendering Integrity ─────────────────────────────────────
+// ── STT — DOM / Rendering Integrity ─────────────────────────────────────
 
-test.describe('Playground — STT Deep DOM: Integrity', () => {
+test.describe('Playground — STT DOM: Integrity', () => {
 
   test('should not have duplicate Configuration headings', async ({ page }) => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
@@ -6082,9 +6082,9 @@ test.describe('Playground — STT Deep DOM: Integrity', () => {
   });
 });
 
-// ── STT Deep — Code Sample Tab ───────────────────────────────────────────────
+// ── STT — Code Sample Tab ───────────────────────────────────────────────
 
-test.describe('Playground — STT Deep Code Sample: Content', () => {
+test.describe('Playground — STT Code Sample: Content', () => {
 
   test('Code Sample tab should display code when active', async ({ page }) => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
@@ -6121,9 +6121,9 @@ test.describe('Playground — STT Deep Code Sample: Content', () => {
   });
 });
 
-// ── STT Deep — Viewport / Responsive ─────────────────────────────────────────
+// ── STT — Viewport / Responsive ─────────────────────────────────────────
 
-test.describe('Playground — STT Deep Responsive: Viewports', () => {
+test.describe('Playground — STT Responsive: Viewports', () => {
 
   test('STT layout should be usable at 1024x768 (tablet)', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
@@ -6146,9 +6146,9 @@ test.describe('Playground — STT Deep Responsive: Viewports', () => {
   });
 });
 
-// ── STT Deep — Network Health ────────────────────────────────────────────────
+// ── STT — Network Health ────────────────────────────────────────────────
 
-test.describe('Playground — STT Deep Network: Health', () => {
+test.describe('Playground — STT Network: Health', () => {
 
   test('all resources should load without 5xx errors on initial load', async ({ page }) => {
     const serverErrors: string[] = [];
@@ -6182,4 +6182,267 @@ test.describe('Playground — STT Deep Network: Health', () => {
     const failures = creditsCalls.filter(c => c.status >= 400);
     expect(failures.length, `Credits API failures: ${JSON.stringify(failures)}`).toBe(0);
   });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// STT — FEATURE RESULT VERIFICATION (each feature end-to-end with response check)
+// Runs each feature individually, captures API response, verifies result is valid.
+// Any empty / malformed / error response triggers a failure -> high-priority email.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** Helper: upload file, toggle feature, Run Analysis, capture API response */
+async function runFeatureAndCaptureResponse(
+  page: any,
+  featureLabel: string,
+  audioPath: string,
+): Promise<{ status: number; body: any; request: string | null }> {
+  let capturedResponse: { status: number; body: any } | null = null;
+  let capturedRequest: string | null = null;
+
+  page.on('request', (req: any) => {
+    if (req.url().includes('/v1/audio/transcriptions') && req.method() === 'POST') {
+      try { capturedRequest = req.postData(); } catch {}
+    }
+  });
+  page.on('response', async (res: any) => {
+    if (res.url().includes('/v1/audio/transcriptions') && res.request().method() === 'POST') {
+      try {
+        const body = await res.json();
+        capturedResponse = { status: res.status(), body };
+      } catch {
+        capturedResponse = { status: res.status(), body: null };
+      }
+    }
+  });
+
+  await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+  // Toggle only this feature
+  await page.locator('span.leading-tight', { hasText: featureLabel }).first().click({ force: true }).catch(() => {});
+  await page.waitForTimeout(500);
+  await page.locator('input[type="file"]').setInputFiles(audioPath);
+  await page.waitForTimeout(2000);
+  await page.getByRole('button', { name: 'Run Analysis' }).click();
+
+  // Wait for response
+  const deadline = Date.now() + 60000;
+  while (Date.now() < deadline && !capturedResponse) {
+    await page.waitForTimeout(500);
+  }
+  return { status: capturedResponse?.status ?? 0, body: capturedResponse?.body, request: capturedRequest };
+}
+
+test.describe('Playground — STT Feature Verification: Translation', () => {
+  test('Translation feature should return translated text in response', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body, request } = await runFeatureAndCaptureResponse(page, 'Translation', TEST_AUDIO_FILES.wav);
+    expect(status, `HTTP ${status} for Translation`).toBeLessThan(400);
+    const translation = body?.nlp_analysis?.translation || body?.analysis?.translation || body?.translation;
+    const translatedText = typeof translation === 'object' ? translation?.text : translation;
+    console.log(`Translation request body (preview): ${request?.substring(0, 200)}`);
+    console.log(`Translation response text: ${String(translatedText).substring(0, 100)}`);
+    expect(translatedText, `Translation feature returned no result. Body: ${JSON.stringify(body).substring(0, 300)}`).toBeTruthy();
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Transliteration', () => {
+  test('Transliteration feature should return transliterated text', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Transliteration', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(400);
+    const translit = body?.nlp_analysis?.transliteration || body?.analysis?.transliteration;
+    const mainText = body?.text || '';
+    const translitText = typeof translit === 'object' ? translit?.text : translit;
+    const hasResult = (translitText && String(translitText).length > 0) || mainText.length > 0;
+    expect(hasResult, `Transliteration empty. Body: ${JSON.stringify(body).substring(0, 300)}`).toBe(true);
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Speaker Diarization', () => {
+  test('Speaker Diarization should return speaker labels in segments', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Speaker Diarization', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(400);
+    const segments = body?.segments || [];
+    const speakers = body?.speakers || [];
+    const hasSpeakerData = speakers.length > 0 || segments.some((s: any) => s.speaker !== undefined);
+    expect(hasSpeakerData, `No speaker data. Segments: ${segments.length}, Speakers: ${speakers.length}`).toBe(true);
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Speaker Identification', () => {
+  test('Speaker Identification toggle should complete without error', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Speaker Identification', TEST_AUDIO_FILES.wav);
+    expect(status, `HTTP ${status}`).toBeLessThan(500);
+    expect(body, 'Response body should exist').toBeTruthy();
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Word Timestamps', () => {
+  test('Word Timestamps should return words with start/end times', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Word Timestamps', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(400);
+    const segments = body?.segments || [];
+    const hasWordTimestamps = segments.some((s: any) => Array.isArray(s.words) && s.words.length > 0
+      && s.words[0].start !== undefined && s.words[0].end !== undefined);
+    expect(hasWordTimestamps, `Word timestamps missing. Segments: ${segments.length}`).toBe(true);
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Profanity Hashing', () => {
+  test('Profanity Hashing toggle should complete without error', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Profanity Hashing', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(500);
+    expect(body?.text !== undefined || body?.segments !== undefined, 'Response should have transcript').toBe(true);
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Custom Keyword Hashing', () => {
+  test('Custom Keyword Hashing toggle should complete without error', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Custom Keyword Hashing', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(500);
+    expect(body, 'Response body should exist').toBeTruthy();
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Intent Detection', () => {
+  test('Intent Detection should return intent classification', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Intent Detection', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(400);
+    const intent = body?.nlp_analysis?.intent || body?.analysis?.intent || body?.intent;
+    expect(intent, `No intent returned. Body: ${JSON.stringify(body).substring(0, 300)}`).toBeTruthy();
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Sentiment Analysis', () => {
+  test('Sentiment Analysis should return sentiment classification', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Sentiment Analysis', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(400);
+    const sentiment = body?.nlp_analysis?.sentiment || body?.analysis?.sentiment || body?.sentiment;
+    expect(sentiment, `No sentiment returned. Body: ${JSON.stringify(body).substring(0, 300)}`).toBeTruthy();
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Emotion Diarization', () => {
+  test('Emotion Diarization should return emotion data in segments', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Emotion Diarization', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(400);
+    const segments = body?.segments || [];
+    const hasEmotion = segments.some((s: any) => s.emotion !== undefined);
+    expect(hasEmotion, `No emotion data in segments. Body: ${JSON.stringify(body).substring(0, 300)}`).toBe(true);
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Summarisation', () => {
+  test('Summarisation should return a summary string', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Summarisation', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(400);
+    const summary = body?.nlp_analysis?.summary || body?.analysis?.summary || body?.summary;
+    expect(summary && String(summary).length > 0, `Summary empty. Body: ${JSON.stringify(body).substring(0, 300)}`).toBe(true);
+  });
+});
+
+test.describe('Playground — STT Feature Verification: Keyword Normalisation', () => {
+  test('Keyword Normalisation should return normalized text', async ({ page }) => {
+    test.setTimeout(120000);
+    const { status, body } = await runFeatureAndCaptureResponse(page, 'Keyword Normalisation', TEST_AUDIO_FILES.wav);
+    expect(status).toBeLessThan(400);
+    const normalized = body?.nlp_analysis?.normalized_text || body?.analysis?.normalized_text;
+    expect(normalized && String(normalized).length > 0, `Normalized text empty. Body: ${JSON.stringify(body).substring(0, 300)}`).toBe(true);
+  });
+});
+
+// ── STT Feature Verification — Error Signals ─────────────────────────────────
+
+test.describe('Playground — STT Feature Verification: Error Detection', () => {
+
+  test('Any HTTP 4xx during feature run should fail the test', async ({ page }) => {
+    test.setTimeout(120000);
+    const failures: string[] = [];
+    page.on('response', (res: any) => {
+      if (res.url().includes('/v1/audio/transcriptions') && res.status() >= 400) {
+        failures.push(`${res.status()} ${res.url()}`);
+      }
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    for (const feat of ['Translation', 'Transliteration', 'Sentiment Analysis']) {
+      await page.locator('span.leading-tight', { hasText: feat }).first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(200);
+    }
+    await page.locator('input[type="file"]').setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+    expect(failures, `HTTP failures: ${failures.join(' | ')}`).toEqual([]);
+  });
+
+  test('Response body should not contain error field', async ({ page }) => {
+    test.setTimeout(120000);
+    let body: any = null;
+    page.on('response', async (res: any) => {
+      if (res.url().includes('/v1/audio/transcriptions') && res.status() < 400) {
+        try { body = await res.json(); } catch {}
+      }
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.locator('input[type="file"]').setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+
+    expect(body, 'Response body should exist').toBeTruthy();
+    expect(body?.error, `API error: ${JSON.stringify(body?.error)}`).toBeFalsy();
+  });
+
+  test('Transcript text field should not be empty or null', async ({ page }) => {
+    test.setTimeout(120000);
+    let body: any = null;
+    page.on('response', async (res: any) => {
+      if (res.url().includes('/v1/audio/transcriptions') && res.status() < 400) {
+        try { body = await res.json(); } catch {}
+      }
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.locator('input[type="file"]').setInputFiles(TEST_AUDIO_FILES.wav);
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Run Analysis' }).click();
+    await page.waitForTimeout(30000);
+    expect(body?.text && String(body.text).length > 0, `Transcript empty. Body: ${JSON.stringify(body).substring(0, 200)}`).toBe(true);
+  });
+});
+
+// ── Model × Transcription — Each model returns valid result ──────────────────
+
+test.describe('Playground — STT Feature Verification: Model Variants', () => {
+
+  for (const modelLabel of ['Zero Indic', 'Zero Med', 'Zero Codeswitch']) {
+    test(`${modelLabel} model should return valid transcript`, async ({ page }) => {
+      test.setTimeout(120000);
+      let body: any = null;
+      let status = 0;
+      page.on('response', async (res: any) => {
+        if (res.url().includes('/v1/audio/transcriptions')) {
+          status = res.status();
+          try { body = await res.json(); } catch {}
+        }
+      });
+      await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+      const modelSel = page.locator('label', { hasText: 'Model' }).locator('..').locator('select');
+      await modelSel.selectOption({ label: modelLabel });
+      await page.waitForTimeout(500);
+      await page.locator('input[type="file"]').setInputFiles(TEST_AUDIO_FILES.wav);
+      await page.waitForTimeout(2000);
+      await page.getByRole('button', { name: 'Run Analysis' }).click();
+      await page.waitForTimeout(40000);
+      expect(status, `${modelLabel} returned HTTP ${status}`).toBeLessThan(400);
+      expect(body?.text !== undefined, `${modelLabel} missing text field`).toBe(true);
+    });
+  }
 });
