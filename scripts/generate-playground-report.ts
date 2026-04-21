@@ -1216,7 +1216,38 @@ function openModal(idx) {
   Object.keys(byCat).forEach(function(cat) {
     var list = byCat[cat];
     var pass = list.filter(function(s) { return s.status === 'pass'; }).length;
-    sHtml += '<div style="background:#14142a;border:1px solid #252540;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div style="font-weight:600">' + cat + '</div><div style="color:#9ca3af;font-size:14px">' + pass + '/' + list.length + ' passed</div></div>';
+    var failCount = list.length - pass;
+    var headerColor = failCount === 0 ? '#22c55e' : '#ef4444';
+    // Collapsible category section
+    sHtml += '<details open style="background:#14142a;border:1px solid #252540;border-radius:10px;margin-bottom:8px">';
+    sHtml += '<summary style="padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;list-style:none">';
+    sHtml += '<div style="font-weight:600">' + cat + '</div>';
+    sHtml += '<div style="display:flex;gap:8px;align-items:center">';
+    sHtml += '<span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">' + pass + ' pass</span>';
+    if (failCount > 0) sHtml += '<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">' + failCount + ' fail</span>';
+    sHtml += '<span style="color:' + headerColor + ';font-weight:700;font-size:14px">' + pass + '/' + list.length + '</span>';
+    sHtml += '</div></summary>';
+    // Individual suite rows
+    sHtml += '<div style="padding:0 16px 12px 16px">';
+    list.forEach(function(suite) {
+      var statusBadge = suite.status === 'pass'
+        ? '<span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.5px">PASS</span>'
+        : '<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.5px">FAIL</span>';
+      var durStr = suite.duration_s < 60 ? suite.duration_s + 's' : Math.floor(suite.duration_s / 60) + 'm ' + (suite.duration_s % 60) + 's';
+      var rowBg = suite.status === 'fail' ? 'rgba(239,68,68,0.05)' : 'transparent';
+      sHtml += '<div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,0.04);background:' + rowBg + ';display:flex;justify-content:space-between;align-items:center;gap:10px">';
+      sHtml += '<div style="flex:1;min-width:0">';
+      sHtml += '<div style="font-size:13px;color:#e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(suite.name) + '</div>';
+      if (suite.status === 'fail' && suite.failure_reason) {
+        sHtml += '<div style="font-size:11px;color:#f87171;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(suite.failure_reason) + '</div>';
+      }
+      sHtml += '</div>';
+      sHtml += '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0">';
+      sHtml += '<span style="color:#6b7280;font-size:11px;font-family:monospace">' + durStr + '</span>';
+      sHtml += statusBadge;
+      sHtml += '</div></div>';
+    });
+    sHtml += '</div></details>';
   });
   document.getElementById('modalSuites').innerHTML = sHtml;
   var modal = document.getElementById('runModal');
