@@ -239,10 +239,11 @@ function generateHTML(summaries: DailySummary[], allLogs: Map<string, Map<string
     /* ── KPI Cards ───────────────────────────────────────── */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 16px;
       margin-bottom: 36px;
     }
+    @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
     .kpi-card {
       background: #1a1a2e;
       border: 1px solid #252540;
@@ -607,7 +608,8 @@ function generateHTML(summaries: DailySummary[], allLogs: Map<string, Map<string
 
   <!-- TABS -->
   <div style="display:flex;gap:32px;border-bottom:1px solid #252540;margin-bottom:28px">
-    <button class="dash-tab active" data-tab="current" style="background:none;border:none;color:#a78bfa;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid #a78bfa">Current Run</button>
+    <button class="dash-tab active" data-tab="current" style="background:none;border:none;color:#a78bfa;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid #a78bfa">Overview</button>
+    <button class="dash-tab" data-tab="insights" style="background:none;border:none;color:#6b7280;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent">Insights</button>
     <button class="dash-tab" data-tab="history" style="background:none;border:none;color:#6b7280;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent">Run History</button>
     <button class="dash-tab" data-tab="calendar" style="background:none;border:none;color:#6b7280;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent">Calendar View</button>
   </div>
@@ -676,6 +678,36 @@ function generateHTML(summaries: DailySummary[], allLogs: Map<string, Map<string
     </div>
   </div>
 
+  <!-- INSIGHTS TAB (aggregated analytics across all runs) -->
+  <div id="tab-insights" class="dash-tab-content" style="display:none">
+    <div class="kpi-grid" id="insightsKpis"></div>
+
+    <!-- Flaky suites (intermittent failures) -->
+    <div class="panel">
+      <div class="section-title">Flaky Suites <span style="color:#6b7280;font-size:13px;font-weight:400">— pass sometimes, fail others</span></div>
+      <div id="flakySuites"></div>
+    </div>
+
+    <!-- Most common failure reasons -->
+    <div class="panel">
+      <div class="section-title">Top Failure Reasons</div>
+      <div id="topFailures"></div>
+    </div>
+
+    <!-- Coverage gaps: hours with no runs (catches missed schedule slots) -->
+    <div class="panel">
+      <div class="section-title">Schedule Coverage Heatmap (today)</div>
+      <div style="color:#6b7280;font-size:13px;margin-bottom:12px">Green = run executed, dim = missed hourly slot</div>
+      <div id="coverageMap"></div>
+    </div>
+
+    <!-- Suite duration trends -->
+    <div class="panel">
+      <div class="section-title">Slowest Suites (avg across runs)</div>
+      <div id="slowestSuites"></div>
+    </div>
+  </div>
+
   <!-- RUN DETAIL MODAL -->
   <div id="runModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;justify-content:center;align-items:center;padding:24px">
     <div style="background:#1a1a2e;border:1px solid #252540;border-radius:16px;padding:28px;max-width:900px;width:100%;max-height:85vh;overflow-y:auto;position:relative">
@@ -732,12 +764,16 @@ function switchRun(idx) {
 
   // KPI Cards
   var rateColor = rate >= 90 ? 'green' : rate >= 70 ? 'yellow' : 'red';
+  var todayRuns = SUMMARIES.filter(function(r) { return r.runDate === s.runDate; }).length;
+  var todayLabel = todayRuns + ' / 24';
+  var todayAccent = todayRuns >= 20 ? 'green' : todayRuns >= 12 ? 'yellow' : 'red';
   document.getElementById('kpiGrid').innerHTML =
     kpiCard('blue', s.totalSuites, 'Total Tests') +
     kpiCard('green', s.passed, 'Passed') +
     kpiCard('red', s.failed, 'Failed') +
     kpiCard(rateColor, rate + '%', 'Pass Rate') +
-    kpiCard('purple', fmtDur(totalDuration), 'Duration');
+    kpiCard('purple', fmtDur(totalDuration), 'Duration') +
+    kpiCard(todayAccent, todayLabel, "Today's Runs (of 24)");
 
   // Trend chart (all runs, chronological)
   renderTrend();
@@ -1043,6 +1079,7 @@ document.querySelectorAll('.dash-tab').forEach(function(btn) {
     document.getElementById('tab-' + name).style.display = 'block';
     if (name === 'history') renderHistory();
     if (name === 'calendar') renderCalendar();
+    if (name === 'insights') renderInsights();
   });
 });
 
@@ -1186,6 +1223,102 @@ function openModal(idx) {
   modal.style.display = 'flex';
 }
 function closeModal() { document.getElementById('runModal').style.display = 'none'; }
+
+// ── Insights tab (new aggregated analytics) ──────────────────────────────
+function renderInsights() {
+  // 1. KPI cards specific to insights
+  var totalSuiteRuns = 0, totalSuiteFails = 0;
+  var suiteStats = {}; // name -> { runs, fails, totalDur }
+  var reasons = {}; // reason -> count
+  SUMMARIES.forEach(function(r) {
+    r.suites.forEach(function(s) {
+      totalSuiteRuns++;
+      if (!suiteStats[s.name]) suiteStats[s.name] = { runs: 0, fails: 0, totalDur: 0, category: s.category };
+      suiteStats[s.name].runs++;
+      suiteStats[s.name].totalDur += s.duration_s;
+      if (s.status === 'fail') {
+        suiteStats[s.name].fails++;
+        totalSuiteFails++;
+        var rsn = (s.failure_reason || 'Unknown').substring(0, 80);
+        reasons[rsn] = (reasons[rsn] || 0) + 1;
+      }
+    });
+  });
+
+  var flakyCount = 0;
+  Object.keys(suiteStats).forEach(function(n) {
+    var st = suiteStats[n];
+    if (st.fails > 0 && st.fails < st.runs) flakyCount++;
+  });
+
+  var stableCount = Object.keys(suiteStats).filter(function(n) { return suiteStats[n].fails === 0; }).length;
+  var brokenCount = Object.keys(suiteStats).filter(function(n) { return suiteStats[n].fails === suiteStats[n].runs && suiteStats[n].runs > 1; }).length;
+
+  document.getElementById('insightsKpis').innerHTML =
+    kpiCard('purple', Object.keys(suiteStats).length, 'Unique Suites') +
+    kpiCard('green', stableCount, 'Always Pass') +
+    kpiCard('yellow', flakyCount, 'Flaky (intermittent)') +
+    kpiCard('red', brokenCount, 'Always Fail') +
+    kpiCard('blue', totalSuiteRuns, 'Suite Executions') +
+    kpiCard('purple', SUMMARIES.length, 'Total Runs');
+
+  // 2. Flaky suites list
+  var flaky = Object.keys(suiteStats)
+    .filter(function(n) { return suiteStats[n].fails > 0 && suiteStats[n].fails < suiteStats[n].runs; })
+    .map(function(n) { return { name: n, ...suiteStats[n], failRate: suiteStats[n].fails / suiteStats[n].runs }; })
+    .sort(function(a, b) { return b.failRate - a.failRate; })
+    .slice(0, 15);
+  document.getElementById('flakySuites').innerHTML = flaky.length === 0
+    ? '<div style="color:#22c55e;padding:16px;text-align:center">No flaky suites detected — all suites are consistent.</div>'
+    : flaky.map(function(f) {
+        var pct = Math.round(f.failRate * 100);
+        return '<div style="background:#14142a;border:1px solid #252540;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">' +
+          '<div><div style="font-weight:600;font-size:14px">' + f.name + '</div><div style="font-size:12px;color:#6b7280;margin-top:2px">' + f.category + '</div></div>' +
+          '<div style="text-align:right"><div style="color:#eab308;font-weight:700;font-size:16px">' + pct + '% fail</div><div style="font-size:12px;color:#6b7280">' + f.fails + '/' + f.runs + ' runs</div></div>' +
+          '</div>';
+      }).join('');
+
+  // 3. Top failure reasons
+  var reasonList = Object.keys(reasons).map(function(r) { return { reason: r, count: reasons[r] }; })
+    .sort(function(a, b) { return b.count - a.count; }).slice(0, 10);
+  document.getElementById('topFailures').innerHTML = reasonList.length === 0
+    ? '<div style="color:#22c55e;padding:16px;text-align:center">No failure reasons recorded.</div>'
+    : reasonList.map(function(r) {
+        return '<div style="background:#14142a;border:1px solid #252540;border-radius:8px;padding:10px 16px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">' +
+          '<div style="font-size:13px;color:#e5e7eb">' + r.reason + '</div>' +
+          '<div style="color:#ef4444;font-weight:700;min-width:40px;text-align:right">' + r.count + '</div></div>';
+      }).join('');
+
+  // 4. Coverage heatmap for today (24 hours)
+  var today = new Date().toISOString().split('T')[0];
+  var runsByHour = new Array(24).fill(0);
+  SUMMARIES.forEach(function(r) {
+    if (r.runDate !== today) return;
+    var h = parseInt((r.runTimestamp || '').split(' ')[1]?.split(':')[0] || '-1', 10);
+    if (h >= 0 && h < 24) runsByHour[h]++;
+  });
+  var hmap = '<div style="display:grid;grid-template-columns:repeat(24,1fr);gap:4px">';
+  for (var h = 0; h < 24; h++) {
+    var c = runsByHour[h];
+    var bg = c === 0 ? '#1f1f36' : c === 1 ? '#22c55e' : '#4ade80';
+    var lbl = String(h).padStart(2, '0') + ':30';
+    hmap += '<div title="' + lbl + ' — ' + c + ' run(s)" style="background:' + bg + ';height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:' + (c === 0 ? '#555' : '#000') + ';font-weight:600">' + h + '</div>';
+  }
+  hmap += '</div><div style="margin-top:8px;font-size:12px;color:#6b7280">Ran ' + runsByHour.reduce(function(a, b) { return a + b; }, 0) + ' out of 24 scheduled slots today</div>';
+  document.getElementById('coverageMap').innerHTML = hmap;
+
+  // 5. Slowest suites
+  var slowest = Object.keys(suiteStats)
+    .map(function(n) { return { name: n, avgDur: suiteStats[n].totalDur / suiteStats[n].runs, runs: suiteStats[n].runs }; })
+    .sort(function(a, b) { return b.avgDur - a.avgDur; })
+    .slice(0, 10);
+  var maxDur = slowest.length > 0 ? slowest[0].avgDur : 1;
+  document.getElementById('slowestSuites').innerHTML = slowest.map(function(s) {
+    var pct = Math.round(s.avgDur / maxDur * 100);
+    return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>' + s.name + '</span><span style="color:#a78bfa;font-weight:600">' + fmtDur(Math.round(s.avgDur)) + '</span></div>' +
+      '<div style="background:#14142a;height:8px;border-radius:4px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#6c47ff,#a78bfa)"></div></div></div>';
+  }).join('');
+}
 function exportRun() {
   var r = SUMMARIES[modalRunIdx];
   var blob = new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' });
