@@ -1,0 +1,112 @@
+name: Scheduled Playground Tests (Cloud Backup)
+
+on:
+  # Runs at 08:00 UTC daily (13:30 IST). Acts as safety net when local Mac is off.
+  schedule:
+    - cron: '0 8 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Restore auth state from secret
+        run: |
+          mkdir -p auth
+          echo "${{ secrets.PLAYGROUND_AUTH_JSON_B64 }}" | base64 -d > auth/playground-auth.json
+          if [ ! -s auth/playground-auth.json ]; then
+            echo "::error::PLAYGROUND_AUTH_JSON_B64 secret is missing or empty"
+            exit 1
+          fi
+
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          ASR_API_KEY=${{ secrets.ASR_API_KEY }}
+          ASR_BASE_URL=${{ secrets.ASR_BASE_URL }}
+          ASR_BASE_URL_ROOT=${{ secrets.ASR_BASE_URL_ROOT }}
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASS=${{ secrets.SMTP_PASS }}
+          REPORT_EMAIL_FROM=${{ secrets.REPORT_EMAIL_FROM }}
+          REPORT_EMAIL_TO=${{ secrets.REPORT_EMAIL_TO }}
+          REPORT_BASE_URL=https://yamini-pal-singh.github.io/playground-testing
+          GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON=${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON_B64 }}
+          EOF
+
+      - name: Run UI test suites
+        id: tests
+        continue-on-error: true
+        run: |
+          bash scripts/run-playground-daily.sh
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Generate HTML report
+        if: always()
+        run: npx ts-node scripts/generate-playground-report.ts
+
+      - name: Read summary stats
+        if: always()
+        id: stats
+        run: |
+          DATE=$(date -u '+%Y-%m-%d')
+          SUMMARY="reports/playground-summary-$DATE.json"
+          if [ -f "$SUMMARY" ]; then
+            FAILED=$(python3 -c "import json; print(json.load(open('$SUMMARY')).get('failed', 0))")
+            PASSED=$(python3 -c "import json; print(json.load(open('$SUMMARY')).get('passed', 0))")
+            TOTAL=$(python3 -c "import json; print(json.load(open('$SUMMARY')).get('totalSuites', 0))")
+          else
+            FAILED=1
+            PASSED=0
+            TOTAL=0
+          fi
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+
+      - name: Commit and push dashboard
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/Playground-Report.html reports/playground-summary-*.json 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            git commit -m "Cloud run dashboard update — $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
+
+      - name: Send email on failure
+        if: always() && steps.stats.outputs.failed != '0'
+        run: npx ts-node scripts/send-playground-email.ts
+
+      - name: Clean up sensitive files
+        if: always()
+        run: |
+          rm -f .env
+          rm -rf auth
