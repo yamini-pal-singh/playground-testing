@@ -119,6 +119,14 @@ run_test "Functional UI"  "Audio Intelligence Features" "npx playwright test src
 run_test "Functional UI"  "File Upload"                 "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'File Upload'"
 run_test "Functional UI"  "Sample Audio Removal"        "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Sample Audio Removal'"
 run_test "Functional UI"  "Language Dropdown"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'Language Dropdown'"
+run_test "Functional UI"  "TTS Configuration"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Configuration'"
+run_test "Functional UI"  "TTS Text Input"               "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Text Input'"
+run_test "Functional UI"  "TTS Sub-tabs"                 "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Sub-tabs'"
+run_test "Functional UI"  "TTS Voice Options"            "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Voice Options'"
+run_test "Functional UI"  "TTS Output Options"           "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Output Options'"
+run_test "Functional UI"  "TTS Audio Player"             "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS Audio Player'"
+run_test "Functional UI"  "TTS Negative"                 "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS: Negative'"
+run_test "Functional UI"  "TTS Edge Cases"               "npx playwright test src/tests/playgroundUI.spec.ts --reporter=list --project=playground-ui -g 'TTS: Edge Cases'"
 
 # Sections 2-4 (Health Check, Backend API, Zero Indic) removed — only UI tests are active
 

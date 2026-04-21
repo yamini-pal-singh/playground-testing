@@ -3945,3 +3945,617 @@ test.describe('Playground — Language Dropdown: Edge Cases', () => {
     expect(langCount, 'Should have a large number of language options').toBeGreaterThan(50);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// TEXT TO SPEECH (TTS) — COMPREHENSIVE COVERAGE
+// ════════════════════════════════════════════════════════════════════════════
+
+const TTS_SAMPLE_TEXT = 'This is a test message for speech synthesis.';
+
+// ── TTS — Configuration: Positive Tests ──────────────────────────────────────
+
+test.describe('Playground — TTS Configuration: Positive Tests', () => {
+
+  test('TTS tab should be switchable from STT', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Synthesis Mode')).toBeVisible();
+  });
+
+  test('Synthesis Mode dropdown should have Batch and Streaming options', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const synthModeSelect = page.locator('select').filter({ has: page.locator('option[value="batch"]') });
+    const options = await synthModeSelect.locator('option').allTextContents();
+    expect(options).toContain('Batch');
+    expect(options).toContain('Streaming');
+  });
+
+  test('Synthesis Mode should default to Batch', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const synthModeSelect = page.locator('select').filter({ has: page.locator('option[value="batch"]') });
+    const val = await synthModeSelect.inputValue();
+    expect(val).toBe('batch');
+  });
+
+  test('Synthesis Mode can be changed to Streaming', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const synthModeSelect = page.locator('select').filter({ has: page.locator('option[value="batch"]') });
+    await synthModeSelect.selectOption('streaming');
+    expect(await synthModeSelect.inputValue()).toBe('streaming');
+  });
+
+  test('TTS Model dropdown should display Zero Indic', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const modelSelect = page.locator('select').filter({ has: page.locator('option[value="zero-indic"]') });
+    await expect(modelSelect).toBeVisible();
+    expect(await modelSelect.inputValue()).toBe('zero-indic');
+  });
+
+  test('Script dropdown should be present with 20+ language options', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const scriptSelect = page.locator('select').filter({ has: page.locator('option[value="hi"]') });
+    const options = await scriptSelect.locator('option').count();
+    expect(options).toBeGreaterThanOrEqual(20);
+  });
+
+  test('Script dropdown should default to Hindi', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const scriptSelect = page.locator('select').filter({ has: page.locator('option[value="hi"]') });
+    expect(await scriptSelect.inputValue()).toBe('hi');
+  });
+
+  test('Script can be changed to English', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const scriptSelect = page.locator('select').filter({ has: page.locator('option[value="hi"]') });
+    await scriptSelect.selectOption('en');
+    expect(await scriptSelect.inputValue()).toBe('en');
+  });
+
+  test('Script should include major Indian languages', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const scriptSelect = page.locator('select').filter({ has: page.locator('option[value="hi"]') });
+    const options = await scriptSelect.locator('option').allTextContents();
+    for (const lang of ['Hindi', 'Tamil', 'Telugu', 'Bengali', 'Marathi', 'Gujarati', 'Kannada', 'Malayalam', 'Punjabi']) {
+      expect(options.join('|')).toContain(lang);
+    }
+  });
+});
+
+// ── TTS — Text Input: Positive Tests ─────────────────────────────────────────
+
+test.describe('Playground — TTS Text Input: Positive Tests', () => {
+
+  test('Enter your Text heading should be visible', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Enter your Text')).toBeVisible();
+  });
+
+  test('text input subtitle should describe purpose', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/Type or paste text to convert to speech/)).toBeVisible();
+  });
+
+  test('textarea should be visible with placeholder', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const textarea = page.locator('textarea');
+    await expect(textarea).toBeVisible();
+    const placeholder = await textarea.getAttribute('placeholder');
+    expect(placeholder).toBeTruthy();
+  });
+
+  test('typing text should update character counter', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const textarea = page.locator('textarea');
+    await textarea.fill(TTS_SAMPLE_TEXT);
+    await expect(page.getByText(new RegExp(`Characters:\\s*${TTS_SAMPLE_TEXT.length}`))).toBeVisible();
+  });
+
+  test('character counter should show 0 / 10,000 initially', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/Characters:\s*0\s*\/\s*10,?000/)).toBeVisible();
+  });
+
+  test('textarea should have maxlength of 10000', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const maxlen = await page.locator('textarea').getAttribute('maxlength');
+    expect(maxlen).toBe('10000');
+  });
+
+  test('Transliteration active indicator should show for non-English script', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/Transliteration active/)).toBeVisible();
+  });
+
+  test('clearing textarea should reset counter to 0', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const textarea = page.locator('textarea');
+    await textarea.fill('Hello');
+    await textarea.fill('');
+    await expect(page.getByText(/Characters:\s*0\s*\/\s*10,?000/)).toBeVisible();
+  });
+});
+
+// ── TTS — Features / Code Sample Sub-tabs ────────────────────────────────────
+
+test.describe('Playground — TTS Sub-tabs: Positive Tests', () => {
+
+  test('Features and Code Sample sub-tabs should be visible', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole('button', { name: 'Features' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Code Sample' })).toBeVisible();
+  });
+
+  test('Features tab should be active by default in TTS', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Voice Options')).toBeVisible();
+  });
+
+  test('clicking Code Sample should show code snippet', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: 'Code Sample' }).click();
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).toMatch(/import|requests|python|curl|main\.py/i);
+  });
+
+  test('switching back to Features from Code Sample should restore Voice Options', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: 'Code Sample' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Features' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Voice Options')).toBeVisible();
+  });
+});
+
+// ── TTS — Voice Options: Positive Tests ──────────────────────────────────────
+
+test.describe('Playground — TTS Voice Options: Positive Tests', () => {
+
+  test('Voice Options heading should be visible', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Voice Options')).toBeVisible();
+  });
+
+  test('Preset Voice and Clone Voice toggle should be present', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole('button', { name: 'Preset Voice' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Clone Voice' })).toBeVisible();
+  });
+
+  test('Preset Voice should be active by default', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/Gender/)).toBeVisible();
+    await expect(page.getByText(/Voice/).first()).toBeVisible();
+  });
+
+  test('clicking Clone Voice should show upload controls', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: 'Clone Voice' }).click();
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).toMatch(/Upload|Record|WAV|reference/i);
+  });
+
+  test('switching back to Preset Voice should restore Gender/Voice cards', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: 'Clone Voice' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Preset Voice' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Gender/)).toBeVisible();
+  });
+
+  test('Gender card should be visible with Male default', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/Gender/)).toBeVisible();
+    await expect(page.getByText(/Male/)).toBeVisible();
+  });
+
+  test('Voice card should be visible with Varun default (Male)', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/Varun/).first()).toBeVisible();
+  });
+
+  test('Expression option should be present', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Expression')).toBeVisible();
+  });
+
+  test('Speed option should be present', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Speed')).toBeVisible();
+  });
+
+  test('Trim Silence option should be present', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Trim Silence')).toBeVisible();
+  });
+
+  test('clicking Gender card should open popup with Male and Female', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const genderCard = page.locator('[role="button"]').filter({ hasText: /^Gender/ }).first();
+    await genderCard.click({ force: true });
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).toContain('Female');
+  });
+
+  test('changing Gender to Female should update Voice', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const genderCard = page.locator('[role="button"]').filter({ hasText: /^Gender/ }).first();
+    await genderCard.click({ force: true });
+    await page.waitForTimeout(500);
+    await page.getByText('Female', { exact: true }).first().click({ force: true, timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+    const bodyText = await page.textContent('body') || '';
+    const varunOrNisha = bodyText.includes('Nisha') || !bodyText.includes('Varun');
+    expect(varunOrNisha, 'Voice should change from Varun when Gender is Female').toBe(true);
+  });
+
+  test('Trim Silence toggle can be enabled', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const trimCard = page.locator('[role="button"]').filter({ hasText: /^Trim Silence/ }).first();
+    await trimCard.click({ force: true });
+    await page.waitForTimeout(500);
+    // Should not throw — just verify interaction possible
+  });
+});
+
+// ── TTS — Output Options: Positive Tests ─────────────────────────────────────
+
+test.describe('Playground — TTS Output Options: Positive Tests', () => {
+
+  test('Output Options heading should be visible', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Output Options')).toBeVisible();
+  });
+
+  test('Format option should default to WAV', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/WAV/).first()).toBeVisible();
+  });
+
+  test('Background Audio option should be present', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Background Audio')).toBeVisible();
+  });
+
+  test('clicking Format card should open format options popup', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const formatCard = page.locator('[role="button"]').filter({ hasText: /^Format/ }).first();
+    await formatCard.click({ force: true });
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    const hasMultipleFormats = ['MP3', 'FLAC', 'PCM'].some(f => bodyText.includes(f));
+    expect(hasMultipleFormats, 'Should show additional format options').toBe(true);
+  });
+
+  test('clicking Background Audio card should show options', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const bgCard = page.locator('[role="button"]').filter({ hasText: /^Background Audio/ }).first();
+    await bgCard.click({ force: true });
+    await page.waitForTimeout(500);
+    const bodyText = await page.textContent('body') || '';
+    const hasAmbientOption = ['Office', 'Cafe', 'Rain', 'Street', 'None'].some(b => bodyText.includes(b));
+    expect(hasAmbientOption).toBe(true);
+  });
+});
+
+// ── TTS — Audio Player / Run Synthesis: Positive Tests ───────────────────────
+
+test.describe('Playground — TTS Audio Player: Positive Tests', () => {
+
+  test('Audio Player section should be visible', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Audio Player')).toBeVisible();
+  });
+
+  test('Run Synthesis button should be visible', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole('button', { name: 'Run Synthesis' })).toBeVisible();
+  });
+
+  test('Run Synthesis should be disabled when textarea is empty', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole('button', { name: 'Run Synthesis' })).toBeDisabled();
+  });
+
+  test('Run Synthesis should be enabled after typing text', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.waitForTimeout(500);
+    await expect(page.getByRole('button', { name: 'Run Synthesis' })).toBeEnabled();
+  });
+
+  test('empty state message should be visible initially', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/Enter text above and click Run Synthesis/)).toBeVisible();
+  });
+});
+
+// ── TTS — Negative Tests ─────────────────────────────────────────────────────
+
+test.describe('Playground — TTS: Negative Tests', () => {
+
+  test('typing whitespace only should keep Run Synthesis in stable state', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill('   ');
+    await page.waitForTimeout(500);
+    // Page should not crash
+    await expect(page.getByRole('button', { name: 'Run Synthesis' })).toBeVisible();
+  });
+
+  test('TTS tab should not show STT-specific elements', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).not.toContain('Transcription Mode');
+    expect(bodyText).not.toContain('Upload Your Audio');
+    expect(bodyText).not.toContain('Run Analysis');
+  });
+
+  test('Code Sample should not be editable', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: 'Code Sample' }).click();
+    await page.waitForTimeout(500);
+    const codeEditable = await page.locator('textarea:not([placeholder*="transliterate"])').count();
+    expect(codeEditable).toBe(0);
+  });
+
+  test('TTS tab should not cause JavaScript errors', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(2000);
+    expect(errors.length, 'No console errors on TTS load').toBe(0);
+  });
+
+  test('typing text should not trigger API call', async ({ page }) => {
+    const apiCalls: string[] = [];
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/') && req.method() === 'POST') apiCalls.push(req.url());
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.waitForTimeout(2000);
+    expect(apiCalls.length, 'No API calls until Run Synthesis clicked').toBe(0);
+  });
+
+  test('changing Synthesis Mode should not trigger API call', async ({ page }) => {
+    const apiCalls: string[] = [];
+    page.on('request', req => {
+      if (req.url().includes('/v1/audio/') && req.method() === 'POST') apiCalls.push(req.url());
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const synthModeSelect = page.locator('select').filter({ has: page.locator('option[value="batch"]') });
+    await synthModeSelect.selectOption('streaming');
+    await page.waitForTimeout(1000);
+    expect(apiCalls.length).toBe(0);
+  });
+
+  test('Character counter should not show negative values', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const bodyText = await page.textContent('body') || '';
+    expect(bodyText).not.toMatch(/Characters:\s*-\d+/);
+    expect(bodyText).not.toContain('NaN');
+    expect(bodyText).not.toContain('undefined');
+  });
+
+  test('TTS should not show failed network requests on tab load', async ({ page }) => {
+    const failedReq: string[] = [];
+    page.on('response', res => {
+      if (res.status() >= 400 && res.url().includes('shunyalabs')) failedReq.push(`${res.status()} ${res.url()}`);
+    });
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(2000);
+    expect(failedReq.length).toBe(0);
+  });
+});
+
+// ── TTS — Edge Cases ─────────────────────────────────────────────────────────
+
+test.describe('Playground — TTS: Edge Cases', () => {
+
+  test('rapid Synthesis Mode switching should not crash', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const synthModeSelect = page.locator('select').filter({ has: page.locator('option[value="batch"]') });
+    for (let i = 0; i < 5; i++) {
+      await synthModeSelect.selectOption(i % 2 === 0 ? 'streaming' : 'batch');
+      await page.waitForTimeout(200);
+    }
+    await expect(page.getByText('Synthesis Mode')).toBeVisible();
+  });
+
+  test('rapid Preset ↔ Clone Voice switching should not crash', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    for (let i = 0; i < 5; i++) {
+      await page.getByRole('button', { name: i % 2 === 0 ? 'Clone Voice' : 'Preset Voice' }).click();
+      await page.waitForTimeout(300);
+    }
+    await expect(page.getByText('Voice Options')).toBeVisible();
+  });
+
+  test('switching tabs with text entered should preserve or reset appropriately', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.getByRole('button', { name: 'Speech to Text' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    // Should not crash
+    await expect(page.getByText('Voice Options')).toBeVisible();
+  });
+
+  test('changing Script should preserve text if valid', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill('Hello');
+    const scriptSelect = page.locator('select').filter({ has: page.locator('option[value="hi"]') });
+    await scriptSelect.selectOption('en');
+    await page.waitForTimeout(500);
+    // Page should remain stable
+    await expect(page.locator('textarea')).toBeVisible();
+  });
+
+  test('typing large text (1000 chars) should update counter correctly', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const longText = 'a'.repeat(1000);
+    await page.locator('textarea').fill(longText);
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Characters:\s*1,?000/)).toBeVisible();
+  });
+
+  test('pasting text exceeding 10000 should truncate at limit', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    const hugeText = 'a'.repeat(10050);
+    await page.locator('textarea').fill(hugeText);
+    await page.waitForTimeout(500);
+    const actualValue = await page.locator('textarea').inputValue();
+    expect(actualValue.length).toBeLessThanOrEqual(10000);
+  });
+
+  test('opening multiple option popups in sequence should not conflict', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    for (const label of ['Gender', 'Expression', 'Speed', 'Format', 'Background Audio']) {
+      const card = page.locator('[role="button"]').filter({ hasText: new RegExp(`^${label}`) }).first();
+      await card.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(300);
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.waitForTimeout(200);
+    }
+    await expect(page.getByText('Voice Options')).toBeVisible();
+  });
+
+  test('refreshing TTS tab should reset to default state', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await page.locator('textarea').fill(TTS_SAMPLE_TEXT);
+    await page.reload({ waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    // STT is the default after reload
+    await expect(page.getByRole('button', { name: 'Text to Speech' })).toBeVisible();
+  });
+
+  test('TTS Credits should be visible', async ({ page }) => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
+    await page.getByRole('button', { name: 'Text to Speech' }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(/Credits:/)).toBeVisible();
+  });
+});

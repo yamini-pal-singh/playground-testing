@@ -427,12 +427,21 @@ async function sendEmail() {
     });
   }
 
+  const priorityPrefix = failed > 0 ? '[HIGH PRIORITY] ' : '';
+  const headers: Record<string, string> = {};
+  if (failed > 0) {
+    headers['X-Priority'] = '1';
+    headers['X-MSMail-Priority'] = 'High';
+    headers['Importance'] = 'High';
+  }
+
   const mailOptions = {
     from: process.env.REPORT_EMAIL_FROM || process.env.SMTP_USER,
     to: recipients,
-    subject: `${statusEmoji} Playground QC — ${passRate}% Pass Rate (${passed}/${totalSuites}) — ${dateDisplay}`,
+    subject: `${priorityPrefix}${statusEmoji} Playground QC — ${passRate}% Pass Rate (${passed}/${totalSuites}) — ${dateDisplay}`,
     html: buildEmailHTML(summary),
     attachments,
+    headers,
   };
 
   const MAX_ATTEMPTS = 3;
