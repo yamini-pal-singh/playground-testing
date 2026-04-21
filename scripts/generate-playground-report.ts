@@ -608,7 +608,7 @@ function generateHTML(summaries: DailySummary[], allLogs: Map<string, Map<string
 
   <!-- TABS -->
   <div style="display:flex;gap:32px;border-bottom:1px solid #252540;margin-bottom:28px">
-    <button class="dash-tab active" data-tab="current" style="background:none;border:none;color:#a78bfa;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid #a78bfa">Overview</button>
+    <button class="dash-tab active" data-tab="current" style="background:none;border:none;color:#a78bfa;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid #a78bfa">Latest Run</button>
     <button class="dash-tab" data-tab="insights" style="background:none;border:none;color:#6b7280;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent">Insights</button>
     <button class="dash-tab" data-tab="history" style="background:none;border:none;color:#6b7280;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent">Run History</button>
     <button class="dash-tab" data-tab="calendar" style="background:none;border:none;color:#6b7280;padding:12px 4px;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent">Calendar View</button>
@@ -1278,33 +1278,71 @@ function renderInsights() {
           '</div>';
       }).join('');
 
-  // 3. Top failure reasons
-  var reasonList = Object.keys(reasons).map(function(r) { return { reason: r, count: reasons[r] }; })
+  // 3. Top failure reasons (clickable — expands to show affected runs/suites)
+  // Build reason -> list of { runIdx, suiteName }
+  var reasonDetails = {};
+  SUMMARIES.forEach(function(r, idx) {
+    r.suites.forEach(function(s) {
+      if (s.status === 'fail') {
+        var rsn = (s.failure_reason || 'Unknown').substring(0, 80);
+        if (!reasonDetails[rsn]) reasonDetails[rsn] = [];
+        reasonDetails[rsn].push({ runIdx: idx, suiteName: s.name, runTs: r.runTimestamp });
+      }
+    });
+  });
+  var reasonList = Object.keys(reasonDetails).map(function(r) { return { reason: r, count: reasonDetails[r].length, occurrences: reasonDetails[r] }; })
     .sort(function(a, b) { return b.count - a.count; }).slice(0, 10);
   document.getElementById('topFailures').innerHTML = reasonList.length === 0
-    ? '<div style="color:#22c55e;padding:16px;text-align:center">No failure reasons recorded.</div>'
-    : reasonList.map(function(r) {
-        return '<div style="background:#14142a;border:1px solid #252540;border-radius:8px;padding:10px 16px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">' +
-          '<div style="font-size:13px;color:#e5e7eb">' + r.reason + '</div>' +
-          '<div style="color:#ef4444;font-weight:700;min-width:40px;text-align:right">' + r.count + '</div></div>';
+    ? '<div style="color:#22c55e;padding:16px;text-align:center">No failure reasons recorded — all recent runs passed.</div>'
+    : reasonList.map(function(r, idx) {
+        var occList = r.occurrences.slice(0, 20).map(function(o) {
+          return '<li style="padding:6px 0;border-bottom:1px solid #252540;font-size:12px;cursor:pointer" onclick="openModal(' + o.runIdx + ')">' +
+            '<span style="color:#a78bfa">' + o.suiteName + '</span> <span style="color:#6b7280">@ ' + o.runTs + '</span>' +
+            '</li>';
+        }).join('');
+        return '<details style="background:#14142a;border:1px solid #252540;border-radius:8px;padding:10px 16px;margin-bottom:6px">' +
+          '<summary style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;list-style:none">' +
+          '<div style="font-size:13px;color:#e5e7eb;flex:1">' + r.reason + '</div>' +
+          '<div style="color:#ef4444;font-weight:700;min-width:40px;text-align:right">' + r.count + '</div>' +
+          '</summary>' +
+          '<ul style="margin-top:10px;padding-left:0;list-style:none">' + occList + '</ul>' +
+          '</details>';
       }).join('');
 
-  // 4. Coverage heatmap for today (24 hours)
-  var today = new Date().toISOString().split('T')[0];
+  // 4. Coverage heatmap for today (24 hours, local time)
+  // Use local date (matches what daily script writes) NOT UTC
+  var nowDate = new Date();
+  var todayStr = nowDate.getFullYear() + '-' + String(nowDate.getMonth() + 1).padStart(2, '0') + '-' + String(nowDate.getDate()).padStart(2, '0');
   var runsByHour = new Array(24).fill(0);
+  var runTimesByHour = {}; // hour -> timestamps list
   SUMMARIES.forEach(function(r) {
-    if (r.runDate !== today) return;
-    var h = parseInt((r.runTimestamp || '').split(' ')[1]?.split(':')[0] || '-1', 10);
-    if (h >= 0 && h < 24) runsByHour[h]++;
+    if (r.runDate !== todayStr) return;
+    // Parse HH from "YYYY-MM-DD HH:MM:SS"
+    var parts = (r.runTimestamp || '').split(' ');
+    if (parts.length < 2) return;
+    var h = parseInt(parts[1].split(':')[0], 10);
+    if (h >= 0 && h < 24) {
+      runsByHour[h]++;
+      (runTimesByHour[h] = runTimesByHour[h] || []).push(r.runTimestamp);
+    }
   });
   var hmap = '<div style="display:grid;grid-template-columns:repeat(24,1fr);gap:4px">';
   for (var h = 0; h < 24; h++) {
     var c = runsByHour[h];
-    var bg = c === 0 ? '#1f1f36' : c === 1 ? '#22c55e' : '#4ade80';
-    var lbl = String(h).padStart(2, '0') + ':30';
-    hmap += '<div title="' + lbl + ' — ' + c + ' run(s)" style="background:' + bg + ';height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:' + (c === 0 ? '#555' : '#000') + ';font-weight:600">' + h + '</div>';
+    var bg = c === 0 ? '#1f1f36' : c >= 2 ? '#16a34a' : '#22c55e';
+    var hourLabel = String(h).padStart(2, '0') + ':30';
+    var tooltip = c === 0
+      ? hourLabel + ' — no run (missed slot)'
+      : hourLabel + ' — ' + c + ' run(s): ' + (runTimesByHour[h] || []).join(', ');
+    hmap += '<div title="' + tooltip + '" style="background:' + bg + ';height:44px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:' + (c === 0 ? '#555' : '#fff') + ';font-weight:600">' +
+      '<div style="font-size:10px;opacity:0.7">' + String(h).padStart(2, '0') + 'h</div>' +
+      (c > 0 ? '<div style="font-size:11px;margin-top:1px">' + c + '</div>' : '') +
+      '</div>';
   }
-  hmap += '</div><div style="margin-top:8px;font-size:12px;color:#6b7280">Ran ' + runsByHour.reduce(function(a, b) { return a + b; }, 0) + ' out of 24 scheduled slots today</div>';
+  hmap += '</div>';
+  var totalToday = runsByHour.reduce(function(a, b) { return a + b; }, 0);
+  hmap += '<div style="margin-top:10px;font-size:13px;color:#e5e7eb"><strong>' + totalToday + '</strong> / 24 scheduled slots executed today (' + todayStr + ')</div>';
+  hmap += '<div style="margin-top:4px;font-size:11px;color:#6b7280">Each column is one scheduled hour (00h–23h, local time). Hover for exact run timestamps. Column label = hour of day, not date.</div>';
   document.getElementById('coverageMap').innerHTML = hmap;
 
   // 5. Slowest suites
