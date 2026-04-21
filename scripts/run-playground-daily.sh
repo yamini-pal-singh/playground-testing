@@ -179,9 +179,12 @@ run_test "Feature Verify" "Model Variants"               "npx playwright test sr
 # WRITE DAILY SUMMARY JSON
 # ════════════════════════════════════════════════════════════════
 END_TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
+RUN_ID="$(date '+%Y-%m-%dT%H-%M-%S')"
+RUN_JSON="$REPORTS_DIR/playground-run-$RUN_ID.json"
 
-cat > "$SUMMARY_JSON" <<EOF
+SUMMARY_BODY=$(cat <<EOF
 {
+  "runId": "$RUN_ID",
   "runDate": "$DATE",
   "runTimestamp": "$TIMESTAMP",
   "endTimestamp": "$END_TIMESTAMP",
@@ -191,9 +194,15 @@ cat > "$SUMMARY_JSON" <<EOF
   "suites": [$SUITE_ENTRIES]
 }
 EOF
+)
+
+# Write per-run JSON (preserves history) AND latest-of-day JSON
+echo "$SUMMARY_BODY" > "$RUN_JSON"
+echo "$SUMMARY_BODY" > "$SUMMARY_JSON"
 
 echo "" | tee -a "$LOG_FILE"
-echo "   ✅ Summary JSON saved: $SUMMARY_JSON" | tee -a "$LOG_FILE"
+echo "   ✅ Run JSON: $RUN_JSON" | tee -a "$LOG_FILE"
+echo "   ✅ Summary JSON: $SUMMARY_JSON" | tee -a "$LOG_FILE"
 
 # ════════════════════════════════════════════════════════════════
 # WRITE SUITE SUMMARY TO GOOGLE SHEET
