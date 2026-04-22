@@ -47,7 +47,9 @@
       "Bash(open https://yamini-pal-singh.github.io/playground-testing/Playground-Report.html)",
       "Bash(git checkout *)",
       "Bash(/opt/homebrew/bin/gh workflow *)",
-      "Bash(/opt/homebrew/bin/gh run *)"
+      "Bash(/opt/homebrew/bin/gh run *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)"
     ],
     "additionalDirectories": [
       "/tmp",
