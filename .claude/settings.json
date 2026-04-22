@@ -49,7 +49,14 @@
       "Bash(/opt/homebrew/bin/gh workflow *)",
       "Bash(/opt/homebrew/bin/gh run *)",
       "Bash(git pull *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(git log *)",
+      "Bash(git check-ignore *)",
+      "Read(//Users/unitedwecare/Playground_repo/playground-testing/**)",
+      "Bash(awk '/Playground Daily Test Run — 2026-04-21 21:30:05/,/Playground Daily Test Run — 2026-04-22/' logs/playground-daily-2026-04-21.log wc -l /tmp/run-21-30.log echo \"---\" grep -B1 -A2 \"Error:\" /tmp/run-21-30.log)",
+      "Bash(grep -n \"getByRole\\('button', { name: 'Transcript' }\\)\" src/tests/playgroundUI.spec.ts)",
+      "Bash(sed -i '' \"s|getByRole\\('button', { name: 'Transcript' }\\)|getByRole\\('button', { name: 'Transcript' }\\).first\\(\\)|g\" src/tests/playgroundUI.spec.ts)",
+      "Bash(grep -c \"getByRole\\('button', { name: 'Transcript' }\\).first\\(\\)\" src/tests/playgroundUI.spec.ts)"
     ],
     "additionalDirectories": [
       "/tmp",

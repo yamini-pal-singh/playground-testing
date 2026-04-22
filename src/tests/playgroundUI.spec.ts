@@ -6227,8 +6227,17 @@ async function runFeatureAndCaptureResponse(
   });
 
   await page.goto(PLAYGROUND_URL, { waitUntil: 'load', timeout: PLAYGROUND_TIMEOUTS.pageLoad });
-  // Toggle only this feature
-  await page.locator('span.leading-tight', { hasText: featureLabel }).first().click({ force: true }).catch(() => {});
+  // Click the toggle parent (label span itself doesn't fire toggle handler)
+  const featLabel = page.locator('span.leading-tight', { hasText: featureLabel }).first();
+  // Try clicking the toggle wrapper (div with cursor-pointer / role)
+  const toggleWrapper = featLabel.locator('xpath=ancestor::*[@role="button" or contains(@class, "cursor-pointer")][1]');
+  const wrapperCount = await toggleWrapper.count();
+  if (wrapperCount > 0) {
+    await toggleWrapper.first().click({ force: true }).catch(() => {});
+  } else {
+    // Fallback: click the parent div of the label
+    await featLabel.locator('..').click({ force: true }).catch(() => {});
+  }
   await page.waitForTimeout(1000);
   await page.locator('input[type="file"]').setInputFiles(audioPath);
   await page.waitForTimeout(3000);
@@ -6271,12 +6280,14 @@ test.describe('Playground — STT Feature Verification: Transliteration', () => 
 test.describe('Playground — STT Feature Verification: Speaker Diarization', () => {
   test('Speaker Diarization should return speaker labels in segments', async ({ page }) => {
     test.setTimeout(240000);
-    const { status, body } = await runFeatureAndCaptureResponse(page, 'Speaker Diarization', TEST_AUDIO_FILES.wav);
+    const { status, body, request } = await runFeatureAndCaptureResponse(page, 'Speaker Diarization', TEST_AUDIO_FILES.wav);
     expect(status).toBeLessThan(400);
+    const sentDiarization = request && request.toLowerCase().includes('diarization');
+    console.log(`Diarization in request body: ${sentDiarization}`);
     const segments = body?.segments || [];
     const speakers = body?.speakers || [];
     const hasSpeakerData = speakers.length > 0 || segments.some((s: any) => s.speaker !== undefined);
-    expect(hasSpeakerData, `No speaker data. Segments: ${segments.length}, Speakers: ${speakers.length}`).toBe(true);
+    expect(hasSpeakerData, `No speaker data. Segments: ${segments.length}, Speakers: ${speakers.length}. Toggle was ${sentDiarization ? 'sent' : 'NOT sent'} in request.`).toBe(true);
   });
 });
 
