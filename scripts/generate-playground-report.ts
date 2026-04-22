@@ -765,15 +765,15 @@ function switchRun(idx) {
   // KPI Cards
   var rateColor = rate >= 90 ? 'green' : rate >= 70 ? 'yellow' : 'red';
   var todayRuns = SUMMARIES.filter(function(r) { return r.runDate === s.runDate; }).length;
-  var todayLabel = todayRuns + ' / 24';
-  var todayAccent = todayRuns >= 20 ? 'green' : todayRuns >= 12 ? 'yellow' : 'red';
+  var todayLabel = todayRuns + ' / 8';
+  var todayAccent = todayRuns >= 7 ? 'green' : todayRuns >= 4 ? 'yellow' : 'red';
   document.getElementById('kpiGrid').innerHTML =
     kpiCard('blue', s.totalSuites, 'Total Tests') +
     kpiCard('green', s.passed, 'Passed') +
     kpiCard('red', s.failed, 'Failed') +
     kpiCard(rateColor, rate + '%', 'Pass Rate') +
     kpiCard('purple', fmtDur(totalDuration), 'Duration') +
-    kpiCard(todayAccent, todayLabel, "Today's Runs (of 24)");
+    kpiCard(todayAccent, todayLabel, "Today's Runs (of 8)");
 
   // Trend chart (all runs, chronological)
   renderTrend();
@@ -1383,7 +1383,7 @@ function renderInsights() {
   }
   hmap += '</div>';
   var totalToday = runsByHour.reduce(function(a, b) { return a + b; }, 0);
-  hmap += '<div style="margin-top:10px;font-size:13px;color:#e5e7eb"><strong>' + totalToday + '</strong> / 24 scheduled slots executed today (' + todayStr + ')</div>';
+  hmap += '<div style="margin-top:10px;font-size:13px;color:#e5e7eb"><strong>' + totalToday + '</strong> / 8 scheduled slots executed today (' + todayStr + ')</div>';
   hmap += '<div style="margin-top:4px;font-size:11px;color:#6b7280">Each column is one scheduled hour (00h–23h, local time). Hover for exact run timestamps. Column label = hour of day, not date.</div>';
   document.getElementById('coverageMap').innerHTML = hmap;
 
