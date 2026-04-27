@@ -3,6 +3,7 @@ playwright-report/
 test-results/
 logs/*.log
 reports/*.json
+!reports/playground-runs.json
 .env
 Google_service_account.json
 auth/playground-auth.json
