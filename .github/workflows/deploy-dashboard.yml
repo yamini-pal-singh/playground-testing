@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'reports/Playground-Report.html'
+      - 'reports/playground-runs.json'
       - '.github/workflows/deploy-dashboard.yml'
   workflow_dispatch:
 
@@ -27,9 +28,12 @@ jobs:
 
       - name: Prepare pages directory
         run: |
-          mkdir -p pages-output
+          mkdir -p pages-output/reports
           cp reports/Playground-Report.html pages-output/index.html
           cp reports/Playground-Report.html pages-output/Playground-Report.html
+          cp reports/Playground-Report.html pages-output/reports/Playground-Report.html
+          cp reports/playground-runs.json pages-output/playground-runs.json
+          cp reports/playground-runs.json pages-output/reports/playground-runs.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
