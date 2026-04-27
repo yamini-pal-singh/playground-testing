@@ -10,6 +10,7 @@ import * as path from 'path';
 const REPORTS_DIR = path.resolve(__dirname, '..', 'reports');
 const LOGS_DIR = path.resolve(__dirname, '..', 'logs');
 const OUTPUT_HTML = path.resolve(REPORTS_DIR, 'Playground-Report.html');
+const OUTPUT_RUNS_JSON = path.resolve(REPORTS_DIR, 'playground-runs.json');
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -1414,6 +1415,27 @@ function exportRun() {
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
+function buildRunsJson(summaries: DailySummary[]): any[] {
+  // Newest first — loadAllSummaries() already sorts files reverse, but enforce here too
+  const sorted = [...summaries].sort((a, b) =>
+    (b.runTimestamp || b.runDate).localeCompare(a.runTimestamp || a.runDate)
+  );
+  return sorted.map((s) => {
+    const total = s.totalSuites;
+    const rate = total === 0 ? 0 : Math.round((s.passed / total) * 1000) / 10; // 1 decimal
+    return {
+      runId: (s as any).runId || '',
+      runDate: s.runDate,
+      runTimestamp: s.runTimestamp,
+      total,
+      passed: s.passed,
+      failed: s.failed,
+      passRate: rate,
+      suites: s.suites,
+    };
+  });
+}
+
 function main() {
   const summaries = loadAllSummaries();
   const allLogs = loadAllLogs();
@@ -1428,6 +1450,11 @@ function main() {
   console.log(`   ${summaries.length} historical run(s) included`);
   const logCount = Array.from(allLogs.values()).reduce((a, m) => a + m.size, 0);
   console.log(`   ${logCount} suite log section(s) embedded`);
+
+  const runs = buildRunsJson(summaries);
+  fs.writeFileSync(OUTPUT_RUNS_JSON, JSON.stringify(runs, null, 2), 'utf-8');
+  console.log(`Playground runs JSON written: ${OUTPUT_RUNS_JSON}`);
+  console.log(`   ${runs.length} run(s) listed`);
 }
 
 main();

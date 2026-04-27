@@ -216,7 +216,7 @@ const { writeDailySummarySheet } = require('./src/utils/playgroundSheetWriter');
 const summary = JSON.parse(fs.readFileSync('$SUMMARY_JSON', 'utf-8'));
 writeDailySummarySheet(summary.suites, summary.runDate).then(() => {
   console.log('Done');
-}).catch((e) => console.error(e.message));
+}).catch((e: any) => console.error(e.message));
 " >> "$LOG_FILE" 2>&1; then
   echo "   ✅ Suite summary written to Google Sheet" | tee -a "$LOG_FILE"
 else

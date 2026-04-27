@@ -48,7 +48,7 @@ npx ts-node scripts/generate-playground-report.ts 2>&1
 # ── Step 4: Push dashboard to GitHub Pages ──
 echo ""
 echo "── Publishing Dashboard ─────────────────────────"
-git add reports/Playground-Report.html 2>/dev/null
+git add reports/Playground-Report.html reports/playground-runs.json 2>/dev/null
 git commit -m "Dashboard update — $DATE $(date '+%H:%M')" 2>/dev/null
 git push origin main 2>&1
 echo "   ✅ Dashboard published"
